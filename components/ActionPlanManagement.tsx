@@ -4,6 +4,7 @@ import { Status } from '../types';
 
 interface ActionPlanManagementProps {
     standards: IsoStandard[];
+    // FIX: Corrected typo from `ActionPlan-Status` to `ActionPlanStatus`.
     onStatusChange: (itemId: string, standardId: string, newStatus: ActionPlanStatus) => void;
 }
 
@@ -11,6 +12,30 @@ const statusColors: { [key in ActionPlanStatus]: string } = {
     'Pendente': 'bg-red-100 text-red-800',
     'Em Andamento': 'bg-yellow-100 text-yellow-800',
     'Concluído': 'bg-green-100 text-green-800',
+};
+
+const ObservationContent: React.FC<{ observation: ChecklistItemData['observations'] }> = ({ observation }) => {
+    let data;
+    if (typeof observation === 'object' && observation !== null) {
+        data = observation;
+    } else if (typeof observation === 'string') {
+        try {
+            data = JSON.parse(observation);
+        } catch {
+            return <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{observation}</p>;
+        }
+    } else {
+        return <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">Nenhuma observação registrada.</p>;
+    }
+
+    const { fact, evidence, requirement } = data;
+    return (
+         <div className="space-y-2 mt-1 text-sm text-slate-700">
+            {fact && <p><strong className="font-semibold text-slate-800">Fato:</strong> {fact}</p>}
+            {evidence && <p><strong className="font-semibold text-slate-800">Evidência:</strong> {evidence}</p>}
+            {requirement && <p><strong className="font-semibold text-slate-800">Requisito:</strong> {requirement}</p>}
+        </div>
+    );
 };
 
 const ActionPlanItem: React.FC<{ item: ChecklistItemData & { standardId: string; standardName: string }, onStatusChange: ActionPlanManagementProps['onStatusChange'] }> = ({ item, onStatusChange }) => {
@@ -41,7 +66,7 @@ const ActionPlanItem: React.FC<{ item: ChecklistItemData & { standardId: string;
             <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
                 <div>
                     <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Observação (FER)</strong>
-                    <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{item.observations}</p>
+                    <ObservationContent observation={item.observations} />
                 </div>
                 {item.analysis && (
                     <div className="p-4 bg-blue-50/50 border border-blue-200 rounded-lg">

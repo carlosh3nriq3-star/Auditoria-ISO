@@ -1,6 +1,7 @@
 
+
 import React, { useState } from 'react';
-import type { AuditInfo, IsoStandard } from '../types';
+import type { AuditInfo, IsoStandard, ChecklistItemData } from '../types';
 import { Status } from '../types';
 
 interface ReportGeneratorProps {
@@ -35,6 +36,34 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({ auditInfo, sta
         ? prev.filter(id => id !== standardId)
         : [...prev, standardId]
     );
+  };
+
+  // FIX: Re-implemented logic to correctly handle `observation` which can be a string or an object.
+  // This resolves a TypeScript error where properties were accessed on a potential string type.
+  const renderObservationForReport = (observation: ChecklistItemData['observations']) => {
+    if (!observation) return 'Nenhuma observação registrada.';
+
+    let data;
+    if (typeof observation === 'string') {
+        try {
+            data = JSON.parse(observation);
+        } catch {
+            return observation; // It's a plain string
+        }
+    } else {
+        data = observation;
+    }
+    
+    const { fact, evidence, requirement, justification } = data;
+
+    if (justification) return justification;
+    
+    const parts = [];
+    if (fact) parts.push(`Fato: ${fact}`);
+    if (evidence) parts.push(`Evidência: ${evidence}`);
+    if (requirement) parts.push(`Requisito: ${requirement}`);
+    
+    return parts.length > 0 ? parts.join('\n') : JSON.stringify(data);
   };
 
   const filteredStandards = standards.filter(s => selectedStandards.includes(s.id));
@@ -138,7 +167,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({ auditInfo, sta
                             </div>
                             <div className={`mt-2 p-3 rounded border ${statusColors[item.status].bg} ${statusColors[item.status].border}`}>
                                 <p className="font-semibold">Observações e Evidências:</p>
-                                <p className="whitespace-pre-wrap">{item.observations || 'Nenhuma observação registrada.'}</p>
+                                <p className="whitespace-pre-wrap">{renderObservationForReport(item.observations)}</p>
                             </div>
                             </div>
                         ))}

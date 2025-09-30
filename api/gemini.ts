@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Type } from "@google/genai";
 
-// --- Types (moved from types.ts to make the API self-contained) ---
+// --- Types (updated to match frontend) ---
 enum Status {
   Conforme = 'Conforme',
   NaoConforme = 'Não Conforme',
@@ -13,6 +13,13 @@ interface AnalysisData {
   rootCause: string;
   correctiveActions: string;
   fiveWhys?: string[];
+}
+
+interface ObservationData {
+  fact?: string;
+  evidence?: string;
+  requirement?: string;
+  justification?: string;
 }
 
 interface AuditInfo {
@@ -29,12 +36,43 @@ interface ChecklistItemData {
   requirement: string;
   description: string;
   status: Status;
-  observations: string;
+  observations: ObservationData | string; // Corrected type
   department: string;
   standardName?: string;
   evidenceImage: { data: string; mimeType: string } | null;
   analysis?: AnalysisData;
 }
+
+
+// --- Helpers ---
+const stringifyObservation = (obs: ObservationData | string): string => {
+    if (typeof obs === 'string') {
+        return obs;
+    }
+    if (typeof obs === 'object' && obs !== null) {
+        return Object.entries(obs)
+            .filter(([, value]) => value)
+            .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+            .join('; ');
+    }
+    return '';
+};
+
+const cleanJsonString = (rawText: string): string => {
+    let text = rawText.trim();
+    if (text.startsWith('```json')) {
+        text = text.substring(7);
+        if (text.endsWith('```')) {
+            text = text.slice(0, -3);
+        }
+    } else if (text.startsWith('```')) {
+        text = text.substring(3);
+        if (text.endsWith('```')) {
+            text = text.slice(0, -3);
+        }
+    }
+    return text.trim();
+};
 
 
 // --- Prompts ---
@@ -83,7 +121,7 @@ const getFiveWhysPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standa
     - Norma: ${standardName}
     - Requisito: ${item.requirement} - ${item.description}
     - Departamento/Gestão do Requisito: ${item.department}
-    - Observação/Evidência (Problema Inicial): ${item.observations}
+    - Observação/Evidência (Problema Inicial): ${stringifyObservation(item.observations)}
 
     **Tarefa:**
     1.  **Análise 5 Porquês:** Começando com o problema inicial, pergunte "Por quê?" cinco vezes, de forma sequencial e lógica, para aprofundar a análise até encontrar a causa fundamental. Cada resposta deve ser a causa do "porquê" anterior. Formate cada passo como uma frase completa, por exemplo: "1. O problema ocorreu PORQUÊ a especificação não foi seguida."
@@ -134,12 +172,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         }
                     }
                 });
-                const jsonText = response.text;
-                if (!jsonText) {
+                const rawJsonText = response.text;
+                if (!rawJsonText) {
                     throw new Error("A resposta da API para gerar observações estava vazia.");
                 }
-                // Retorna a string JSON para o cliente, que irá interpretá-la.
-                return res.status(200).json({ result: jsonText.trim() });
+                const cleanedJson = cleanJsonString(rawJsonText);
+                const observationData = JSON.parse(cleanedJson);
+                return res.status(200).json({ result: observationData });
             }
 
             case 'generateRootCauseAnalysis': {
@@ -173,11 +212,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         }
                     }
                 });
-                const jsonText = response.text;
-                if (!jsonText) {
+                const rawJsonText = response.text;
+                if (!rawJsonText) {
                     throw new Error("A resposta da API para análise de causa raiz estava vazia.");
                 }
-                const analysisData = JSON.parse(jsonText.trim());
+                const cleanedJson = cleanJsonString(rawJsonText);
+                const analysisData = JSON.parse(cleanedJson);
                 return res.status(200).json({ result: analysisData });
             }
 

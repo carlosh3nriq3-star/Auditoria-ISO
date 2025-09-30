@@ -13,50 +13,56 @@ interface ChecklistItemProps {
   isAnalyzing: boolean;
 }
 
-const ObservationDisplay: React.FC<{ observation: string }> = ({ observation }) => {
+const ObservationDisplay: React.FC<{ observation: ChecklistItemData['observations'] }> = ({ observation }) => {
   if (!observation) {
     return <span className="text-slate-400">Selecione um status para gerar as observações...</span>;
   }
 
-  try {
-    const data = JSON.parse(observation);
-    const { fact, evidence, requirement, justification } = data;
-
-    if (justification) {
-      return <p className="whitespace-pre-wrap text-slate-700">{justification}</p>;
+  let data;
+  if (typeof observation === 'object' && observation !== null) {
+    data = observation;
+  } else { // It's a string
+    try {
+      data = JSON.parse(String(observation));
+    } catch (error) {
+      // If parsing fails, it's a plain text message
+      return <p className="whitespace-pre-wrap text-slate-700">{String(observation)}</p>;
     }
-
-    if (fact || evidence || requirement) {
-      return (
-        <div className="space-y-3">
-          {fact && (
-            <div>
-              <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fato</strong>
-              <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{fact}</p>
-            </div>
-          )}
-          {evidence && (
-            <div>
-              <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Evidência</strong>
-              <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{evidence}</p>
-            </div>
-          )}
-          {requirement && (
-            <div>
-              <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Requisito</strong>
-              <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{requirement}</p>
-            </div>
-          )}
-        </div>
-      );
-    }
-  } catch (error) {
-    // If parsing fails, it's probably plain text (e.g., "Gerando...", error message)
-    return <p className="whitespace-pre-wrap text-slate-700">{observation}</p>;
   }
 
+  const { fact, evidence, requirement, justification } = data;
+
+  if (justification) {
+    return <p className="whitespace-pre-wrap text-slate-700">{justification}</p>;
+  }
+
+  if (fact || evidence || requirement) {
+    return (
+      <div className="space-y-3">
+        {fact && (
+          <div>
+            <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fato</strong>
+            <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{fact}</p>
+          </div>
+        )}
+        {evidence && (
+          <div>
+            <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Evidência</strong>
+            <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{evidence}</p>
+          </div>
+        )}
+        {requirement && (
+          <div>
+            <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Requisito</strong>
+            <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{requirement}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
   // Fallback for empty JSON object or other edge cases
-  return <p className="whitespace-pre-wrap text-slate-700">{observation}</p>;
+  return <p className="whitespace-pre-wrap text-slate-700">{JSON.stringify(observation)}</p>;
 };
 
 
@@ -95,6 +101,8 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
+
+  const isGenerating = isLoading && typeof item.observations === 'string' && item.observations.includes('Gerando');
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-200/80">
@@ -148,8 +156,8 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
                             </button>
                         </div>
                         <div className="flex items-start text-sm min-h-[6rem] bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            {isLoading && item.observations.includes('Gerando') && <LoadingSpinner />}
-                            <div className={`flex-1 ${isLoading && item.observations.includes('Gerando') ? 'text-slate-400' : ''}`}>
+                            {isGenerating && <LoadingSpinner />}
+                            <div className={`flex-1 ${isGenerating ? 'text-slate-400' : ''}`}>
                                 <ObservationDisplay observation={item.observations} />
                             </div>
                         </div>

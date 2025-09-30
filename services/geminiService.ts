@@ -1,4 +1,4 @@
-import type { AuditInfo, ChecklistItemData, AnalysisData } from '../types';
+import type { AuditInfo, ChecklistItemData, AnalysisData, ObservationData } from '../types';
 
 async function callApi<T>(action: string, payload: unknown): Promise<T> {
     try {
@@ -29,8 +29,8 @@ export async function generateObservations(
     item: ChecklistItemData,
     auditInfo: AuditInfo,
     standardName: string
-): Promise<string> {
-    return callApi<string>('generateObservations', { item, auditInfo, standardName });
+): Promise<ObservationData> {
+    return callApi<ObservationData>('generateObservations', { item, auditInfo, standardName });
 }
 
 export async function generateRootCauseAnalysis(

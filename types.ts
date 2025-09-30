@@ -15,6 +15,13 @@ export interface AnalysisData {
   fiveWhys?: string[];
 }
 
+export interface ObservationData {
+  fact?: string;
+  evidence?: string;
+  requirement?: string;
+  justification?: string;
+}
+
 export interface AuditInfo {
   company: string;
   department: string;
@@ -29,7 +36,7 @@ export interface ChecklistItemData {
   requirement: string;
   description: string;
   status: Status;
-  observations: string;
+  observations: ObservationData | string;
   department: string;
   standardName?: string;
   evidenceImage: { data: string; mimeType: string } | null;
