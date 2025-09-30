@@ -1,9 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import type { ChecklistItemData } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-
 export async function generateObservation(item: ChecklistItemData, standardName: string): Promise<string> {
+  // A inicialização foi movida para dentro da função para evitar erros no carregamento inicial do app.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const { requirement, description, status } = item;
 
   const prompt = `
