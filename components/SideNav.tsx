@@ -170,6 +170,12 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                         <ListBulletIcon className="w-6 h-6" />
                         <span className="text-xs mt-1 truncate">Normas</span>
                     </button>
+                    {currentUser?.allowedDepartments.includes('Histórico') && (
+                        <button onClick={() => setActiveView('history')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView.startsWith('history') ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Histórico">
+                            <ArchiveBoxIcon className="w-6 h-6" />
+                            <span className="text-xs mt-1 truncate">Histórico</span>
+                        </button>
+                    )}
                      {currentUser?.allowedDepartments.includes('Usuários') && (
                         <button onClick={() => setActiveView('users')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'users' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Usuários">
                             <UsersIcon className="w-6 h-6" />
