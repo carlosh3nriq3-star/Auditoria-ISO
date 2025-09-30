@@ -14,10 +14,10 @@ import { ISO_STANDARDS } from './constants';
 import { generateObservations, generateRootCauseAnalysis } from './services/geminiService';
 
 const INITIAL_USERS: User[] = [
-    { id: 'user-1', name: 'João Silva', email: 'joao.silva@example.com', role: 'Auditor Líder', password: '123' },
-    { id: 'user-2', name: 'Maria Souza', email: 'maria.souza@example.com', role: 'Auditor', password: '123' },
-    { id: 'user-3', name: 'Pedro Santos', email: 'pedro.santos@example.com', role: 'Admin', password: '123' },
-    { id: 'user-4', name: 'Admin User', email: 'admin@example.com', role: 'Admin', password: '123' },
+    { id: 'user-1', name: 'João Silva', email: 'joao.silva@example.com', role: 'Auditor Líder' },
+    { id: 'user-2', name: 'Maria Souza', email: 'maria.souza@example.com', role: 'Auditor' },
+    { id: 'user-3', name: 'Pedro Santos', email: 'pedro.santos@example.com', role: 'Admin' },
+    { id: 'user-4', name: 'Admin User', email: 'admin@example.com', role: 'Admin' },
 ];
 
 export default function App() {
@@ -42,13 +42,15 @@ export default function App() {
   const [showLogin, setShowLogin] = useState<boolean>(false);
 
   const handleLogin = (email: string, password: string): void => {
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+      // NOTE: A verificação de senha foi removida para esta aplicação de demonstração para evitar o armazenamento de senhas em texto plano.
+      // Em uma aplicação real, a autenticação deve ser tratada por um serviço de backend seguro.
+      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (user) {
           setCurrentUser(user);
           setShowLogin(false); // Hide login form on success
           setLoginError('');
       } else {
-          setLoginError('E-mail ou senha inválidos.');
+          setLoginError('Usuário não encontrado.');
       }
   };
 

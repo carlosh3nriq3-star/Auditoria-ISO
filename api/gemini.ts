@@ -39,44 +39,36 @@ interface ChecklistItemData {
 
 // --- Prompts ---
 const getObservationsPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standardName: string) => `
-    Você é um auditor líder sênior de SGI (ISO 9001, 14001, 45001), especialista em auditorias internas.
-    Com base no item do checklist de auditoria e no status selecionado, gere uma observação concisa e profissional para o campo "Observações/Evidências".
-    Siga estritamente a metodologia FER (Fato, Evidência, Requisito) quando aplicável.
+    Você é um auditor líder sênior de SGI (ISO 9001, 14001, 45001).
+    Com base nas informações abaixo, gere uma observação de auditoria.
 
     **Contexto da Auditoria:**
     - Empresa: ${auditInfo.company}
     - Área Auditada: ${auditInfo.department}
-    - Auditor Líder: ${auditInfo.leadAuditor}
-    - Auditados: ${auditInfo.auditees}
-
-    **Item do Checklist:**
     - Norma: ${standardName}
-    - Requisito: ${item.requirement}
-    - Departamento/Gestão do Requisito: ${item.department}
-    - Descrição do Requisito: ${item.description}
+    - Requisito: ${item.requirement} - ${item.description}
     - Status Selecionado pelo Auditor: "${item.status}"
 
-    **Tarefa (Gerar o texto para o campo "Observações/Evidências"):**
+    **Sua Tarefa:**
+    Gere um objeto JSON com base no status:
 
-    - Se o status for **"Não Conforme"**:
-        - Fato: Descreva um cenário hipotético, porém plausível e específico para o departamento '${item.department}', que caracterize uma não conformidade para este requisito.
-        - Evidência: Cite uma evidência objetiva e hipotética que comprovaria o fato (ex: "o documento XYZ rev. 02 não foi encontrado no servidor", "em entrevista, o operador da máquina A não conhecia o procedimento de segurança PO-005", "o registro de calibração do equipamento Y estava vencido desde 10/05/2023").
-        - Requisito: Declare claramente o requisito da norma que não foi atendido.
-        - Formato: "FER: [Fato]. Evidência: [Evidência]. Requisito: [Requisito]."
+    - Se o status for "Não Conforme":
+        - fact: Descreva um cenário hipotético, porém plausível e específico, que caracterize uma não conformidade para este requisito.
+        - evidence: Cite uma evidência objetiva e hipotética que comprovaria o fato (ex: "documento XYZ rev. 02 não encontrado").
+        - requirement: Declare o requisito da norma que não foi atendido.
 
-    - Se o status for **"Conforme"**:
-        - Fato: Descreva uma situação onde o requisito é atendido de forma eficaz e consistente no departamento '${item.department}'.
-        - Evidência: Cite uma evidência objetiva e hipotética que demonstre a conformidade (ex: "o procedimento PO-010, relacionado a este requisito, foi apresentado e está implementado", "os registros de treinamento da equipe B estão completos e atualizados", "entrevista com o gestor da área confirmou a aplicação da política Z").
-        - Requisito: Afirme que as atividades auditadas estão de acordo com o requisito.
-        - Formato: "FER: [Fato]. Evidência: [Evidência]. Requisito: As práticas auditadas atendem ao requisito ${item.requirement} da norma."
+    - Se o status for "Conforme":
+        - fact: Descreva uma situação onde o requisito é atendido de forma eficaz.
+        - evidence: Cite uma evidência objetiva e hipotética que demonstre a conformidade (ex: "procedimento PO-010 apresentado e implementado").
+        - requirement: Afirme que as atividades auditadas estão de acordo com o requisito.
 
-    - Se o status for **"Não Aplicável"**:
-        - Forneça uma justificativa técnica plausível para a não aplicabilidade do requisito no contexto da área/empresa auditada (ex: "O requisito 8.3 - Projeto e Desenvolvimento não se aplica, pois a organização não realiza atividades de desenvolvimento de produtos, atuando apenas com base em especificações de clientes.").
+    - Se o status for "Não Aplicável":
+        - justification: Forneça uma justificativa técnica e plausível para a não aplicabilidade do requisito.
 
-    - Se o status for **"Não Auditado"**:
-        - Forneça um motivo profissional e breve para a não auditoria deste item (ex: "Item não auditado por restrições de tempo, conforme acordado no plano de auditoria.", "Não auditado pois o gestor da área estava indisponível na data da auditoria.").
+    - Se o status for "Não Auditado":
+        - justification: Forneça um motivo profissional e breve para a não auditoria deste item.
 
-    O resultado deve ser um texto único, em português, pronto para ser inserido no relatório.
+    Retorne APENAS o objeto JSON.
 `;
 
 const getFiveWhysPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standardName: string) => `
@@ -129,9 +121,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: prompt,
+                     config: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: Type.OBJECT,
+                            properties: {
+                                fact: { type: Type.STRING, description: 'Descrição do fato observado.' },
+                                evidence: { type: Type.STRING, description: 'Descrição da evidência encontrada.' },
+                                requirement: { type: Type.STRING, description: 'Descrição do requisito relacionado.' },
+                                justification: { type: Type.STRING, description: 'Justificativa para status Não Aplicável ou Não Auditado.' }
+                            }
+                        }
+                    }
                 });
-                const text = response.text ?? '';
-                return res.status(200).json({ result: text.trim() });
+                const jsonText = response.text;
+                if (!jsonText) {
+                    throw new Error("A resposta da API para gerar observações estava vazia.");
+                }
+                // Retorna a string JSON para o cliente, que irá interpretá-la.
+                return res.status(200).json({ result: jsonText.trim() });
             }
 
             case 'generateRootCauseAnalysis': {

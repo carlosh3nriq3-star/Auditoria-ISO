@@ -20,13 +20,7 @@ async function callApi<T>(action: string, payload: unknown): Promise<T> {
         return data.result as T;
     } catch (error) {
         console.error(`API call for action "${action}" failed:`, error);
-        
-        if (action === 'generateObservations') {
-            // Return a user-friendly error message for this specific action
-            return "Ocorreu um erro ao conectar ao servidor. Por favor, tente novamente." as T;
-        }
-        
-        // For other actions, re-throw the error to be handled by the caller
+        // Re-throw the error to be handled by the caller component
         throw error;
     }
 }

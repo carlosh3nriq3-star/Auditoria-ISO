@@ -18,14 +18,13 @@ const ObservationDisplay: React.FC<{ observation: string }> = ({ observation }) 
     return <span className="text-slate-400">Selecione um status para gerar as observações...</span>;
   }
 
-  if (observation.startsWith('FER:')) {
-    const factMatch = observation.match(/FER:\s*(.*?)(?=\s*Evidência:|\s*Requisito:|$)/s);
-    const evidenceMatch = observation.match(/Evidência:\s*(.*?)(?=\s*Requisito:|$)/s);
-    const requirementMatch = observation.match(/Requisito:\s*(.*)/s);
+  try {
+    const data = JSON.parse(observation);
+    const { fact, evidence, requirement, justification } = data;
 
-    const fact = factMatch ? factMatch[1].trim() : null;
-    const evidence = evidenceMatch ? evidenceMatch[1].trim() : null;
-    const requirement = requirementMatch ? requirementMatch[1].trim() : null;
+    if (justification) {
+      return <p className="whitespace-pre-wrap text-slate-700">{justification}</p>;
+    }
 
     if (fact || evidence || requirement) {
       return (
@@ -51,9 +50,15 @@ const ObservationDisplay: React.FC<{ observation: string }> = ({ observation }) 
         </div>
       );
     }
+  } catch (error) {
+    // If parsing fails, it's probably plain text (e.g., "Gerando...", error message)
+    return <p className="whitespace-pre-wrap text-slate-700">{observation}</p>;
   }
+
+  // Fallback for empty JSON object or other edge cases
   return <p className="whitespace-pre-wrap text-slate-700">{observation}</p>;
 };
+
 
 const AnalysisDisplay: React.FC<{ analysis: AnalysisData }> = ({ analysis }) => (
     <div className="mt-4 p-4 bg-blue-50/50 border border-blue-200 rounded-lg space-y-4">
@@ -109,7 +114,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
                         <h4 className="text-sm font-medium text-slate-600 mb-2">Evidência Anexada</h4>
                         <img 
                             src={`data:${item.evidenceImage.mimeType};base64,${item.evidenceImage.data}`} 
-                            alt="Evidence" 
+                            alt={`Evidência para requisito ${item.requirement}`} 
                             className="rounded-lg border border-slate-200 max-h-48 w-auto"
                         />
                     </div>

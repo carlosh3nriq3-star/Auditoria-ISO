@@ -2,23 +2,29 @@ import React from 'react';
 import type { IsoStandard, ChecklistItemData } from './types';
 import { Status } from './types';
 
+// FIX: Rewrote SVG component using React.createElement to be compatible with a .ts file.
+// JSX syntax is not allowed in .ts files and causes parsing errors.
 const Icon9001: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: "1.5", stroke: "currentColor", ...props },
-    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" })
-  )
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: "1.5", stroke: "currentColor", ...props },
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" })
+    )
 );
 
+// FIX: Rewrote SVG component using React.createElement to be compatible with a .ts file.
+// JSX syntax is not allowed in .ts files and causes parsing errors.
 const Icon14001: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: "1.5", stroke: "currentColor", ...props },
-    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.287 8.287 0 0 0 3-1.04 8.252 8.252 0 0 1 3.362-3.347Z" }),
-    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 21a9.754 9.754 0 0 1-4.592-1.168 9.75 9.75 0 1 0-9.132-14.385 9.75 9.75 0 0 1 13.724 15.553Z" })
-  )
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: "1.5", stroke: "currentColor", ...props },
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.287 8.287 0 0 0 3-1.04 8.252 8.252 0 0 1 3.362-3.347Z" }),
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 21a9.754 9.754 0 0 1-4.592-1.168 9.75 9.75 0 1 0-9.132-14.385 9.75 9.75 0 0 1 13.724 15.553Z" })
+    )
 );
 
+// FIX: Rewrote SVG component using React.createElement to be compatible with a .ts file.
+// JSX syntax is not allowed in .ts files and causes parsing errors.
 const Icon45001: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: "1.5", stroke: "currentColor", ...props },
-    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.73-.664 1.206-.864m-3.702 3.894L3 19.5V15l7.147-7.147M18 4.5l-2.426 2.426" })
-  )
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: "1.5", stroke: "currentColor", ...props },
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.73-.664 1.206-.864m-3.702 3.894L3 19.5V15l7.147-7.147M18 4.5l-2.426 2.426" })
+    )
 );
 
 const iso9001Items: ChecklistItemData[] = [
