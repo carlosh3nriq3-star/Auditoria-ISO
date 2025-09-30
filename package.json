@@ -1,0 +1,17 @@
+{
+  "name": "iso-audit-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Run index.html on a local server'",
+    "build": "echo 'No build step for frontend, Vercel will handle API routes.'"
+  },
+  "dependencies": {
+    "@google/genai": "^1.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@vercel/node": "^3.0.25",
+    "typescript": "^5.3.3"
+  }
+}

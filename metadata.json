@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Plataforma de Auditoria ISO com IA",
+  "description": "Uma plataforma web inteligente de auditoria interna para as normas ISO 9001, 14001 e 45001. Apresenta um checklist para os requisitos de cada norma e utiliza IA para gerar automaticamente observações e evidências com base na entrada do auditor, seguindo a metodologia FER (Fato, Evidência, Requisito).",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
