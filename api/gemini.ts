@@ -93,7 +93,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     model: 'gemini-2.5-flash',
                     contents: prompt,
                 });
-                return res.status(200).json({ result: response.text.trim() });
+                const text = response.text ?? '';
+                return res.status(200).json({ result: text.trim() });
             }
 
             case 'generateRootCauseAnalysis': {
@@ -120,8 +121,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         }
                     }
                 });
-                const jsonText = response.text.trim();
-                const analysisData = JSON.parse(jsonText);
+                const jsonText = response.text;
+                if (!jsonText) {
+                    throw new Error("A resposta da API para análise de causa raiz estava vazia.");
+                }
+                const analysisData = JSON.parse(jsonText.trim());
                 return res.status(200).json({ result: analysisData });
             }
 
