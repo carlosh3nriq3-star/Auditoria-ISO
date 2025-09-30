@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { IsoStandard, User } from '../types';
 
 interface SideNavProps {
@@ -39,8 +39,17 @@ const LogoutIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const ListBulletIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+    </svg>
+);
+
 
 export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActiveView, currentUser, onLogout }) => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const isNormasActive = standards.some(s => s.id === activeView);
+
     return (
         <>
             {/* Desktop Sidebar */}
@@ -146,6 +155,10 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                         <HomeIcon className="w-6 h-6" />
                         <span className="text-xs mt-1 truncate">Dashboard</span>
                     </button>
+                     <button onClick={() => setIsMobileMenuOpen(true)} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${isNormasActive ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Normas">
+                        <ListBulletIcon className="w-6 h-6" />
+                        <span className="text-xs mt-1 truncate">Normas</span>
+                    </button>
                     <button onClick={() => setActiveView('action-plans')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'action-plans' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Planos de Ação">
                         <ChartBarSquareIcon className="w-6 h-6" />
                         <span className="text-xs mt-1 truncate">Ações</span>
@@ -162,6 +175,44 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                     </button>
                 </div>
             </nav>
+
+            {/* Mobile Standards Modal */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden fixed inset-0 bg-black/60 z-[100] flex items-end justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                    <div className="bg-slate-900 rounded-t-2xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-slate-700 flex justify-between items-center">
+                            <h3 className="text-lg font-semibold text-white">Selecionar Norma</h3>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-2">
+                            {standards.map((standard) => {
+                                const Icon = standard.icon;
+                                return (
+                                    <button
+                                        key={standard.id}
+                                        onClick={() => {
+                                            setActiveView(standard.id);
+                                            setIsMobileMenuOpen(false);
+                                        }}
+                                        className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
+                                            activeView === standard.id
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                        }`}
+                                    >
+                                        {Icon && <Icon className="w-6 h-6 flex-shrink-0" />}
+                                        <span className="font-medium">{standard.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
