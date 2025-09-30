@@ -4,6 +4,7 @@ import { Status } from '../types';
 interface StatusSelectorProps {
   selectedStatus: Status;
   onChange: (newStatus: Status) => void;
+  disabled?: boolean;
 }
 
 const baseButtonClasses: { [key in Status]: string } = {
@@ -21,14 +22,15 @@ const activeButtonClasses: { [key in Status]: string } = {
 };
 
 
-export const StatusSelector: React.FC<StatusSelectorProps> = ({ selectedStatus, onChange }) => {
+export const StatusSelector: React.FC<StatusSelectorProps> = ({ selectedStatus, onChange, disabled = false }) => {
   return (
     <div className="flex flex-wrap gap-2">
       {(Object.values(Status)).map((status) => (
         <button
           key={status}
           onClick={() => onChange(status)}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 focus:outline-none
+          disabled={disabled}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed
             ${selectedStatus === status 
               ? activeButtonClasses[status]
               : baseButtonClasses[status]

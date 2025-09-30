@@ -38,32 +38,8 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({ auditInfo, sta
     );
   };
 
-  // FIX: Re-implemented logic to correctly handle `observation` which can be a string or an object.
-  // This resolves a TypeScript error where properties were accessed on a potential string type.
-  const renderObservationForReport = (observation: ChecklistItemData['observations']) => {
-    if (!observation) return 'Nenhuma observação registrada.';
-
-    let data;
-    if (typeof observation === 'string') {
-        try {
-            data = JSON.parse(observation);
-        } catch {
-            return observation; // It's a plain string
-        }
-    } else {
-        data = observation;
-    }
-    
-    const { fact, evidence, requirement, justification } = data;
-
-    if (justification) return justification;
-    
-    const parts = [];
-    if (fact) parts.push(`Fato: ${fact}`);
-    if (evidence) parts.push(`Evidência: ${evidence}`);
-    if (requirement) parts.push(`Requisito: ${requirement}`);
-    
-    return parts.length > 0 ? parts.join('\n') : JSON.stringify(data);
+  const renderObservationForReport = (observation: string) => {
+    return observation || 'Nenhuma observação registrada.';
   };
 
   const filteredStandards = standards.filter(s => selectedStandards.includes(s.id));

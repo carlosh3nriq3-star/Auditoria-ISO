@@ -1,6 +1,5 @@
 
-
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Status } from '../types';
 
 interface RequirementsChartData {
@@ -14,21 +13,61 @@ interface RequirementsChartProps {
   data: RequirementsChartData[];
 }
 
+interface TooltipData {
+  visible: boolean;
+  content: string;
+  x: number;
+  y: number;
+}
+
 const statusColors: { [key in Status]?: string } = {
-  [Status.Conforme]: 'bg-green-500',
-  [Status.NaoConforme]: 'bg-red-500',
-  [Status.NaoAplicavel]: 'bg-yellow-500',
+  [Status.Conforme]: '#22c55e', // green-500
+  [Status.NaoConforme]: '#ef4444', // red-500
+  [Status.NaoAplicavel]: '#eab308', // yellow-500
 };
 
-const statusLabels: { [key in Status]?: string } = {
-  [Status.Conforme]: 'C',
-  [Status.NaoConforme]: 'NC',
-  [Status.NaoAplicavel]: 'NA',
-};
-
+const statusOrder: Status[] = [Status.Conforme, Status.NaoConforme, Status.NaoAplicavel];
 
 export const RequirementsChart: React.FC<RequirementsChartProps> = ({ data }) => {
-  const chartData = data.filter(d => d[Status.Conforme] > 0 || d[Status.NaoConforme] > 0 || d[Status.NaoAplicavel] > 0);
+  const [tooltip, setTooltip] = useState<TooltipData>({ visible: false, content: '', x: 0, y: 0 });
+  
+  const chartData = useMemo(() => data.filter(d => 
+    d[Status.Conforme] > 0 || d[Status.NaoConforme] > 0 || d[Status.NaoAplicavel] > 0
+  ), [data]);
+
+  const handleMouseOver = (e: React.MouseEvent, content: string) => {
+    setTooltip({ visible: true, content, x: e.clientX, y: e.clientY });
+  };
+  
+  const handleMouseLeave = () => {
+    setTooltip(prev => ({ ...prev, visible: false }));
+  };
+  
+  const TooltipComponent = () => (
+    tooltip.visible ? (
+      <div
+        style={{
+          position: 'fixed',
+          top: tooltip.y,
+          left: tooltip.x,
+          transform: 'translate(10px, -100%)',
+          pointerEvents: 'none',
+        }}
+        className="bg-slate-800 text-white text-xs rounded-lg py-1.5 px-3 shadow-lg z-50"
+        dangerouslySetInnerHTML={{ __html: tooltip.content }}
+      />
+    ) : null
+  );
+
+  const chartHeight = 250;
+  const chartPadding = { top: 20, right: 20, bottom: 40, left: 40 };
+  const maxCount = useMemo(() => {
+    if (chartData.length === 0) return 10;
+    const maxVal = Math.max(...chartData.map(d => d[Status.Conforme] + d[Status.NaoConforme] + d[Status.NaoAplicavel]));
+    return Math.ceil(maxVal / 5) * 5 || 5; // Round up to nearest 5
+  }, [chartData]);
+  
+  const yAxisLabels = useMemo(() => Array.from({ length: 6 }, (_, i) => Math.round(maxCount / 5 * i)), [maxCount]);
 
   if (chartData.length === 0) {
     return (
@@ -47,47 +86,77 @@ export const RequirementsChart: React.FC<RequirementsChartProps> = ({ data }) =>
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg h-full">
-      <h3 className="text-lg font-semibold text-slate-800 mb-4">Achados por Requisito</h3>
-      <div className="space-y-4">
-        {chartData.map((item) => {
-          const total = item[Status.Conforme] + item[Status.NaoConforme] + item[Status.NaoAplicavel];
-          const compliantWidth = total > 0 ? (item[Status.Conforme] / total) * 100 : 0;
-          const nonCompliantWidth = total > 0 ? (item[Status.NaoConforme] / total) * 100 : 0;
-          const notApplicableWidth = total > 0 ? (item[Status.NaoAplicavel] / total) * 100 : 0;
-          
-          return (
-            <div key={item.requirement}>
-              <div className="flex justify-between items-baseline mb-1">
-                <p className="text-sm font-medium text-slate-700 w-1/4">Req. {item.requirement}</p>
-                <div className="text-xs text-slate-500 flex-1 text-right">
-                  {item[Status.Conforme] > 0 && <span className="font-semibold text-green-600">{item[Status.Conforme]} {statusLabels[Status.Conforme]}</span>}
-                  {item[Status.NaoConforme] > 0 && <span className="ml-2 font-semibold text-red-600">{item[Status.NaoConforme]} {statusLabels[Status.NaoConforme]}</span>}
-                  {item[Status.NaoAplicavel] > 0 && <span className="ml-2 font-semibold text-yellow-600">{item[Status.NaoAplicavel]} {statusLabels[Status.NaoAplicavel]}</span>}
-                </div>
-              </div>
-              <div className="flex w-full h-4 bg-slate-200 rounded-full overflow-hidden" title={`Conforme: ${item[Status.Conforme]}, Não Conforme: ${item[Status.NaoConforme]}, Não Aplicável: ${item[Status.NaoAplicavel]}`}>
-                {compliantWidth > 0 && <div className={`${statusColors[Status.Conforme]}`} style={{ width: `${compliantWidth}%` }}></div>}
-                {nonCompliantWidth > 0 && <div className={`${statusColors[Status.NaoConforme]}`} style={{ width: `${nonCompliantWidth}%` }}></div>}
-                {notApplicableWidth > 0 && <div className={`${statusColors[Status.NaoAplicavel]}`} style={{ width: `${notApplicableWidth}%` }}></div>}
-              </div>
-            </div>
-          );
-        })}
-         <div className="flex justify-end pt-4 border-t border-slate-200 mt-6 gap-x-4">
-            <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-xs text-slate-600">Conforme (C)</span>
-            </div>
-             <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="text-xs text-slate-600">Não Conforme (NC)</span>
-            </div>
-             <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <span className="text-xs text-slate-600">Não Aplicável (NA)</span>
-            </div>
+        <TooltipComponent />
+        <h3 className="text-lg font-semibold text-slate-800 mb-4">Achados por Requisito</h3>
+        <div className="w-full" style={{ height: `${chartHeight}px` }}>
+            <svg width="100%" height="100%" viewBox={`0 0 500 ${chartHeight}`}>
+                <g transform={`translate(${chartPadding.left}, ${chartPadding.top})`}>
+                    {/* Y-axis grid and labels */}
+                    {yAxisLabels.map(label => {
+                        const y = chartHeight - chartPadding.bottom - chartPadding.top - (label / maxCount * (chartHeight - chartPadding.bottom - chartPadding.top));
+                        return (
+                            <g key={label}>
+                                <line x1="0" y1={y} x2={500 - chartPadding.left - chartPadding.right} y2={y} stroke="#e2e8f0" strokeWidth="1" />
+                                <text x="-10" y={y + 3} textAnchor="end" fontSize="10" fill="#64748b">{label}</text>
+                            </g>
+                        )
+                    })}
+                    
+                    {/* Bars */}
+                    {chartData.map((item, index) => {
+                        const barWidth = (500 - chartPadding.left - chartPadding.right) / (chartData.length + 1);
+                        const x = index * (barWidth * 1.2);
+                        let currentY = chartHeight - chartPadding.bottom - chartPadding.top;
+
+                        return (
+                            <g key={item.requirement}>
+                                {statusOrder.map(status => {
+                                    const value = item[status];
+                                    if(value === 0) return null;
+                                    
+                                    const barHeight = (value / maxCount) * (chartHeight - chartPadding.top - chartPadding.bottom);
+                                    const rectY = currentY - barHeight;
+                                    currentY = rectY;
+
+                                    const tooltipContent = `<strong>Req. ${item.requirement}</strong><br />${status}: ${value}`;
+                                    
+                                    return (
+                                        <rect
+                                            key={status}
+                                            x={x}
+                                            y={rectY}
+                                            width={barWidth}
+                                            height={barHeight}
+                                            fill={statusColors[status]}
+                                            onMouseMove={(e) => handleMouseOver(e, tooltipContent)}
+                                            onMouseLeave={handleMouseLeave}
+                                            style={{ transition: 'all 0.3s ease' }}
+                                        />
+                                    );
+                                })}
+                                <text
+                                    x={x + barWidth / 2}
+                                    y={chartHeight - chartPadding.bottom - chartPadding.top + 15}
+                                    textAnchor="middle"
+                                    fontSize="10"
+                                    fill="#334155"
+                                >
+                                    {item.requirement}
+                                </text>
+                            </g>
+                        );
+                    })}
+                </g>
+            </svg>
         </div>
-      </div>
+         <div className="flex justify-end pt-4 border-t border-slate-200 mt-6 gap-x-4">
+             {statusOrder.map(status => (
+                <div key={status} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: statusColors[status] }}></div>
+                    <span className="text-xs text-slate-600">{status}</span>
+                </div>
+             ))}
+        </div>
     </div>
   );
 };

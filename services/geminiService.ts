@@ -1,34 +1,52 @@
-import type { AuditInfo, ChecklistItemData, ObservationData } from '../types';
+import { GoogleGenAI } from "@google/genai";
+import type { ChecklistItemData } from '../types';
 
-async function callApi<T>(action: string, payload: unknown): Promise<T> {
-    try {
-        const response = await fetch('/api/gemini', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ action, payload }),
-        });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
-        const data = await response.json();
+export async function generateObservation(item: ChecklistItemData, standardName: string): Promise<string> {
+  const { requirement, description, status } = item;
 
-        if (!response.ok) {
-            console.error('API Error:', data);
-            throw new Error(data.error || `API request failed with status ${response.status}`);
-        }
-        
-        return data.result as T;
-    } catch (error) {
-        console.error(`API call for action "${action}" failed:`, error);
-        // Re-throw the error to be handled by the caller component
-        throw error;
-    }
-}
+  const prompt = `
+    Aja como um auditor experiente de normas ISO. Sua tarefa é gerar uma observação de auditoria concisa e profissional para um item de checklist, seguindo estritamente a metodologia FER (Fato, Evidência, Requisito).
 
-export async function generateObservations(
-    item: ChecklistItemData,
-    auditInfo: AuditInfo,
-    standardName: string
-): Promise<ObservationData> {
-    return callApi<ObservationData>('generateObservations', { item, auditInfo, standardName });
+    **Contexto da Auditoria:**
+    - **Norma:** ${standardName}
+    - **Requisito:** ${requirement}
+    - **Descrição do Requisito:** ${description}
+    - **Status da Auditoria:** ${status}
+
+    **Instruções:**
+    1.  **Fato:** Descreva a situação encontrada de forma objetiva. Se o status for 'Conforme', descreva uma boa prática ou a conformidade. Se for 'Não Conforme', descreva a falha ou o desvio.
+    2.  **Evidência:** Apresente a evidência que suporta o fato. Seja específico e criativo, sugerindo tipos comuns de evidências para este tipo de requisito (ex: "Documento X, rev. 02", "Entrevista com Fulano", "Registro de treinamento", "Visualização do processo Y").
+    3.  **Requisito:** Cite o requisito da norma que foi auditado.
+
+    **Formato da Resposta:**
+    Use o seguinte formato, substituindo o texto entre colchetes:
+    FATO: [Descrição do fato encontrado]
+    EVIDÊNCIA: [Descrição da evidência que comprova o fato]
+    REQUISITO: [Norma e requisito auditado, ex: ${standardName} - ${requirement}]
+
+    **Exemplo (Conforme):**
+    FATO: O processo para gerenciar informação documentada está implementado e mantido.
+    EVIDÊNCIA: Verificado o procedimento "Controle de Documentos" código DOC-QAL-001, rev. 03, e confirmada sua aplicação nas áreas de Produção e Engenharia.
+    REQUISITO: ISO 9001:2015 - 7.5
+
+    **Exemplo (Não Conforme):**
+    FATO: A política da qualidade não está comunicada e entendida por todos na organização.
+    EVIDÊNCIA: Em entrevista com 3 operadores da linha de produção, 2 não souberam explicar a política da qualidade ou onde encontrá-la.
+    REQUISITO: ISO 9001:2015 - 5.2
+
+    Agora, gere a observação para o item fornecido.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+    });
+    return response.text.trim();
+  } catch (error) {
+    console.error("Error generating observation with Gemini:", error);
+    return "Ocorreu um erro ao gerar a observação. Por favor, tente novamente ou insira manualmente.";
+  }
 }

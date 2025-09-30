@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { User } from '../types';
+import type { AuthenticatedUser } from '../types';
 
 interface HeaderProps {
     title: string;
-    currentUser: User | null;
+    currentUser: AuthenticatedUser | null;
     onLogout: () => void;
 }
 
@@ -44,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ title, currentUser, onLogout }) 
                         <div className="py-1">
                             <div className="px-4 py-3 border-b border-slate-200">
                                 <p className="text-sm font-semibold text-slate-900 truncate">{currentUser.name}</p>
-                                <p className="text-xs text-slate-500">{currentUser.role}</p>
+                                <p className="text-xs text-slate-500">{currentUser.roleName}</p>
                             </div>
                             <button
                                 onClick={() => {

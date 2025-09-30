@@ -1,69 +1,29 @@
+
+
 import React, { useRef } from 'react';
 import type { ChecklistItemData } from '../types';
 import { Status } from '../types';
 import { StatusSelector } from './StatusSelector';
-import { LoadingSpinner } from './LoadingSpinner';
 
 interface ChecklistItemProps {
   item: ChecklistItemData;
   onStatusChange: (newStatus: Status) => void;
+  onObservationChange: (value: string) => void;
   onImageUpload: (file: File) => void;
-  isLoading: boolean;
+  isGenerating: boolean;
+  canEdit: boolean;
 }
 
-const ObservationDisplay: React.FC<{ observation: ChecklistItemData['observations'] }> = ({ observation }) => {
-  if (!observation) {
-    return <span className="text-slate-400">Selecione um status para gerar as observações...</span>;
-  }
-
-  let data;
-  if (typeof observation === 'object' && observation !== null) {
-    data = observation;
-  } else { // It's a string
-    try {
-      data = JSON.parse(String(observation));
-    } catch (error) {
-      // If parsing fails, it's a plain text message
-      return <p className="whitespace-pre-wrap text-slate-700">{String(observation)}</p>;
-    }
-  }
-
-  const { fact, evidence, requirement, justification } = data;
-
-  if (justification) {
-    return <p className="whitespace-pre-wrap text-slate-700">{justification}</p>;
-  }
-
-  if (fact || evidence || requirement) {
+const LoadingSpinner: React.FC<{className?: string}> = ({ className = 'w-4 h-4' }) => {
     return (
-      <div className="space-y-3">
-        {fact && (
-          <div>
-            <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fato</strong>
-            <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{fact}</p>
-          </div>
-        )}
-        {evidence && (
-          <div>
-            <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Evidência</strong>
-            <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{evidence}</p>
-          </div>
-        )}
-        {requirement && (
-          <div>
-            <strong className="text-xs font-bold text-slate-500 uppercase tracking-wider">Requisito</strong>
-            <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{requirement}</p>
-          </div>
-        )}
-      </div>
+        <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
     );
-  }
-  
-  // Fallback for empty JSON object or other edge cases
-  return <p className="whitespace-pre-wrap text-slate-700">{JSON.stringify(observation)}</p>;
 };
 
-export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChange, onImageUpload, isLoading }) => {
+export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChange, onObservationChange, onImageUpload, isGenerating, canEdit }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,8 +36,6 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
-
-  const isGenerating = isLoading && typeof item.observations === 'string' && item.observations.includes('Gerando');
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-200/80">
@@ -112,30 +70,40 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
                         <StatusSelector
                             selectedStatus={item.status}
                             onChange={(newStatus) => onStatusChange(newStatus)}
+                            disabled={!canEdit}
                         />
                     </div>
 
                     <div className="flex-1 min-w-[250px]">
-                        <div className="flex justify-between items-center mb-1">
+                        <div className="flex flex-wrap justify-between items-baseline gap-2 mb-1">
                             <h4 className="text-sm font-medium text-slate-600">Observações / Evidências</h4>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-                            <button onClick={handleUploadClick} className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-1 px-2.5 rounded-md transition flex items-center gap-1.5">
-                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                               Anexar Imagem
-                            </button>
-                        </div>
-                        <div className="flex items-start text-sm min-h-[6rem] bg-slate-50 rounded-lg p-3 border border-slate-200">
-                            {isGenerating && <LoadingSpinner />}
-                            <div className={`flex-1 ${isGenerating ? 'text-slate-400' : ''}`}>
-                                <ObservationDisplay observation={item.observations} />
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    disabled={!canEdit}
+                                />
+                                <button 
+                                    onClick={handleUploadClick} 
+                                    className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-1 px-2.5 rounded-md transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={!canEdit}
+                                >
+                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                   Anexar Imagem
+                                </button>
                             </div>
                         </div>
+                        <textarea
+                            className="w-full text-sm bg-slate-50 rounded-lg p-3 border border-slate-200 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm min-h-[6rem] disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                            value={item.observations}
+                            onChange={(e) => onObservationChange(e.target.value)}
+                            rows={4}
+                            placeholder="Digite as observações manualmente ou selecione um status para preenchimento automático."
+                            disabled={isGenerating || !canEdit}
+                        />
                     </div>
                 </div>
             </div>

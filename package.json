@@ -1,3 +1,4 @@
+
 {
   "name": "iso-audit-app",
   "version": "1.0.0",
@@ -8,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -16,7 +16,6 @@
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "@vercel/node": "^3.2.0",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.3.3",
     "vite": "^5.3.1"
