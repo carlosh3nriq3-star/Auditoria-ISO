@@ -12,6 +12,7 @@ export type ActionPlanStatus = 'Pendente' | 'Em Andamento' | 'Concluído';
 export interface AnalysisData {
   rootCause: string;
   correctiveActions: string;
+  fiveWhys?: string[];
 }
 
 export interface AuditInfo {

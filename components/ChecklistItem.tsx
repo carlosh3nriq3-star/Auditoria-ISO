@@ -56,11 +56,23 @@ const ObservationDisplay: React.FC<{ observation: string }> = ({ observation }) 
 };
 
 const AnalysisDisplay: React.FC<{ analysis: AnalysisData }> = ({ analysis }) => (
-    <div className="mt-4 p-4 bg-blue-50/50 border border-blue-200 rounded-lg">
-        <strong className="text-xs font-bold text-blue-600 uppercase tracking-wider">Análise IA & Ações Sugeridas</strong>
-        <div className="mt-2 space-y-2 text-sm text-slate-700">
-            <p><strong>Causa Raiz:</strong> {analysis.rootCause}</p>
-            <p className="whitespace-pre-wrap"><strong>Ações Corretivas:</strong> {analysis.correctiveActions}</p>
+    <div className="mt-4 p-4 bg-blue-50/50 border border-blue-200 rounded-lg space-y-4">
+        <strong className="text-xs font-bold text-blue-600 uppercase tracking-wider block">Análise IA & Ações Sugeridas</strong>
+        
+        {analysis.fiveWhys && (
+             <div>
+                <h5 className="font-semibold text-sm text-slate-800 mb-2">Análise dos 5 Porquês:</h5>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-slate-700">
+                    {analysis.fiveWhys.map((why, index) => (
+                        <li key={index} className="pl-2 leading-relaxed">{why}</li>
+                    ))}
+                </ol>
+            </div>
+        )}
+        
+        <div className="space-y-2 text-sm text-slate-700 pt-3 border-t border-blue-200">
+            <p><strong>Causa Raiz Identificada:</strong> {analysis.rootCause}</p>
+            <p className="whitespace-pre-wrap"><strong>Ações Corretivas Sugeridas:</strong> {analysis.correctiveActions}</p>
         </div>
     </div>
 );
@@ -146,7 +158,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
                             disabled={isAnalyzing}
                             className="w-full flex items-center justify-center gap-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded-lg transition disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-wait"
                         >
-                            {isAnalyzing ? <><LoadingSpinner /> Analisando...</> : 'Analisar Causa Raiz com IA'}
+                            {isAnalyzing ? <><LoadingSpinner /> Analisando...</> : 'Analisar 5 Porquês com IA'}
                         </button>
                     </div>
                 )}

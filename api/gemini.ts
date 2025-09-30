@@ -43,9 +43,9 @@ const getObservationsPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, st
     O resultado deve ser um texto único, em português, pronto para ser inserido no relatório.
 `;
 
-const getRootCausePrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standardName: string) => `
-    Você é um especialista em sistemas de gestão da qualidade (ISO 9001, 14001, 45001) e analista de causa raiz.
-    Para a não conformidade identificada abaixo, realize uma análise de causa raiz e sugira ações corretivas e preventivas.
+const getFiveWhysPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standardName: string) => `
+    Você é um especialista em sistemas de gestão da qualidade (ISO 9001, 14001, 45001) e um mestre na metodologia de análise de causa raiz "5 Porquês".
+    Para a não conformidade identificada abaixo, realize uma análise completa utilizando a técnica dos 5 Porquês.
 
     **Contexto da Auditoria:**
     - Empresa: ${auditInfo.company}
@@ -55,11 +55,12 @@ const getRootCausePrompt = (item: ChecklistItemData, auditInfo: AuditInfo, stand
     - Norma: ${standardName}
     - Requisito: ${item.requirement} - ${item.description}
     - Departamento/Gestão do Requisito: ${item.department}
-    - Observação/Evidência: ${item.observations}
+    - Observação/Evidência (Problema Inicial): ${item.observations}
 
     **Tarefa:**
-    1.  **Análise de Causa Raiz:** Identifique a causa raiz mais provável para esta não conformidade, considerando o contexto da área '${item.department}'. Evite causas superficiais. Pense em falhas de processo, falta de treinamento, problemas de comunicação, falhas de recursos, etc.
-    2.  **Ações Corretivas Sugeridas:** Proponha de 2 a 3 ações corretivas claras, objetivas e práticas para eliminar a causa raiz e resolver a não conformidade.
+    1.  **Análise 5 Porquês:** Começando com o problema inicial, pergunte "Por quê?" cinco vezes, de forma sequencial e lógica, para aprofundar a análise até encontrar a causa fundamental. Cada resposta deve ser a causa do "porquê" anterior. Formate cada passo como uma frase completa, por exemplo: "1. O problema ocorreu PORQUÊ a especificação não foi seguida."
+    2.  **Causa Raiz:** Com base na análise dos 5 Porquês, declare de forma clara e concisa a causa raiz fundamental do problema.
+    3.  **Ações Corretivas Sugeridas:** Proponha de 2 a 3 ações corretivas claras, objetivas e práticas para eliminar a causa raiz e resolver a não conformidade.
 
     Retorne sua análise no seguinte formato JSON:
 `;
@@ -99,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             case 'generateRootCauseAnalysis': {
                 const { item, auditInfo, standardName } = payload;
-                const prompt = getRootCausePrompt(item, auditInfo, standardName);
+                const prompt = getFiveWhysPrompt(item, auditInfo, standardName);
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: prompt,
@@ -108,16 +109,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         responseSchema: {
                             type: Type.OBJECT,
                             properties: {
+                                fiveWhys: {
+                                    type: Type.ARRAY,
+                                    description: 'An array of 5 strings, where each string represents a step in the 5 Whys analysis.',
+                                    items: {
+                                        type: Type.STRING
+                                    }
+                                },
                                 rootCause: {
                                     type: Type.STRING,
-                                    description: 'The fundamental root cause of the non-compliance.'
+                                    description: 'The fundamental root cause of the non-compliance derived from the 5 Whys analysis.'
                                 },
                                 correctiveActions: {
                                     type: Type.STRING,
                                     description: 'A list of suggested corrective actions, ideally in a list format or separated by newlines.'
                                 }
                             },
-                            required: ['rootCause', 'correctiveActions']
+                            required: ['fiveWhys', 'rootCause', 'correctiveActions']
                         }
                     }
                 });
