@@ -9,19 +9,21 @@ const URLS_TO_CACHE = [
   '/types.ts',
   '/constants.ts',
   '/services/geminiService.ts',
+  '/components/ActionPlanManagement.tsx',
   '/components/AuditInfoForm.tsx',
   '/components/Checklist.tsx',
   '/components/ChecklistItem.tsx',
   '/components/ComplianceChart.tsx',
   '/components/Dashboard.tsx',
+  '/components/LandingPage.tsx',
   '/components/LoadingSpinner.tsx',
+  '/components/Login.tsx',
   '/components/ReportGenerator.tsx',
   '/components/RequirementsChart.tsx',
   '/components/SideNav.tsx',
   '/components/StatusSelector.tsx',
   '/components/SummaryCard.tsx',
   '/components/UserManagement.tsx',
-  '/components/Login.tsx',
 ];
 
 // Pre-cache the application shell.

@@ -2,9 +2,10 @@
   "builds": [
     { "src": "api/gemini.ts", "use": "@vercel/node" }
   ],
-  "routes": [
-    { "src": "/api/gemini", "dest": "/api/gemini.ts" },
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/((?!api/|.*\\.).*)",
+      "destination": "/index.html"
+    }
   ]
 }
