@@ -9,12 +9,6 @@ enum Status {
   NaoAuditado = 'Não Auditado',
 }
 
-interface AnalysisData {
-  rootCause: string;
-  correctiveActions: string;
-  fiveWhys?: string[];
-}
-
 interface ObservationData {
   fact?: string;
   evidence?: string;
@@ -40,7 +34,6 @@ interface ChecklistItemData {
   department: string;
   standardName?: string;
   evidenceImage: { data: string; mimeType: string } | null;
-  analysis?: AnalysisData;
 }
 
 
@@ -109,28 +102,6 @@ const getObservationsPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, st
     Retorne APENAS o objeto JSON.
 `;
 
-const getFiveWhysPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standardName: string) => `
-    Você é um especialista em sistemas de gestão da qualidade (ISO 9001, 14001, 45001) e um mestre na metodologia de análise de causa raiz "5 Porquês".
-    Para a não conformidade identificada abaixo, realize uma análise completa utilizando a técnica dos 5 Porquês.
-
-    **Contexto da Auditoria:**
-    - Empresa: ${auditInfo.company}
-    - Área Auditada: ${auditInfo.department}
-
-    **Não Conformidade Identificada:**
-    - Norma: ${standardName}
-    - Requisito: ${item.requirement} - ${item.description}
-    - Departamento/Gestão do Requisito: ${item.department}
-    - Observação/Evidência (Problema Inicial): ${stringifyObservation(item.observations)}
-
-    **Tarefa:**
-    1.  **Análise 5 Porquês:** Começando com o problema inicial, pergunte "Por quê?" cinco vezes, de forma sequencial e lógica, para aprofundar a análise até encontrar a causa fundamental. Cada resposta deve ser a causa do "porquê" anterior. Formate cada passo como uma frase completa, por exemplo: "1. O problema ocorreu PORQUÊ a especificação não foi seguida."
-    2.  **Causa Raiz:** Com base na análise dos 5 Porquês, declare de forma clara e concisa a causa raiz fundamental do problema.
-    3.  **Ações Corretivas Sugeridas:** Proponha de 2 a 3 ações corretivas claras, objetivas e práticas para eliminar a causa raiz e resolver a não conformidade.
-
-    Retorne sua análise no seguinte formato JSON:
-`;
-
 // --- API Handler ---
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const API_KEY = process.env.API_KEY;
@@ -159,18 +130,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: prompt,
-                     config: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: Type.OBJECT,
-                            properties: {
-                                fact: { type: Type.STRING, description: 'Descrição do fato observado.' },
-                                evidence: { type: Type.STRING, description: 'Descrição da evidência encontrada.' },
-                                requirement: { type: Type.STRING, description: 'Descrição do requisito relacionado.' },
-                                justification: { type: Type.STRING, description: 'Justificativa para status Não Aplicável ou Não Auditado.' }
-                            }
-                        }
-                    }
                 });
                 const rawJsonText = response.text;
                 if (!rawJsonText) {
@@ -179,46 +138,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const cleanedJson = cleanJsonString(rawJsonText);
                 const observationData = JSON.parse(cleanedJson);
                 return res.status(200).json({ result: observationData });
-            }
-
-            case 'generateRootCauseAnalysis': {
-                const { item, auditInfo, standardName } = payload;
-                const prompt = getFiveWhysPrompt(item, auditInfo, standardName);
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: Type.OBJECT,
-                            properties: {
-                                fiveWhys: {
-                                    type: Type.ARRAY,
-                                    description: 'An array of 5 strings, where each string represents a step in the 5 Whys analysis.',
-                                    items: {
-                                        type: Type.STRING
-                                    }
-                                },
-                                rootCause: {
-                                    type: Type.STRING,
-                                    description: 'The fundamental root cause of the non-compliance derived from the 5 Whys analysis.'
-                                },
-                                correctiveActions: {
-                                    type: Type.STRING,
-                                    description: 'A list of suggested corrective actions, ideally in a list format or separated by newlines.'
-                                }
-                            },
-                            required: ['fiveWhys', 'rootCause', 'correctiveActions']
-                        }
-                    }
-                });
-                const rawJsonText = response.text;
-                if (!rawJsonText) {
-                    throw new Error("A resposta da API para análise de causa raiz estava vazia.");
-                }
-                const cleanedJson = cleanJsonString(rawJsonText);
-                const analysisData = JSON.parse(cleanedJson);
-                return res.status(200).json({ result: analysisData });
             }
 
             default:

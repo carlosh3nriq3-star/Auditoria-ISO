@@ -21,12 +21,6 @@ const DocumentTextIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const ChartBarSquareIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.25V18a2.25 2.25 0 0 0 2.25 2.25h13.5A2.25 2.25 0 0 0 21 18V8.25m-18 0V6a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 6v2.25m-18 0h18M12 15.75h.008v.008H12v-.008Z" />
-    </svg>
-);
-
 const UsersIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-2.253 9.5 9.5 0 0 0-1.255-7.138 9.337 9.337 0 0 0-3.3-2.625 9.337 9.337 0 0 0-2.625-.372 9.337 9.337 0 0 0-4.121 2.253 9.5 9.5 0 0 0 1.255 7.138 9.337 9.337 0 0 0 3.3 2.625Zm-6.25 1.625a9.337 9.337 0 0 1-4.121-2.253 9.5 9.5 0 0 1 1.255-7.138 9.337 9.337 0 0 1 3.3-2.625 9.337 9.337 0 0 1 2.625-.372 9.337 9.337 0 0 1 4.121 2.253 9.5 9.5 0 0 1-1.255 7.138 9.337 9.337 0 0 1-3.3 2.625 9.337 9.337 0 0 1-2.625.372Zm-6.25-1.625a9.337 9.337 0 0 1-4.121-2.253 9.5 9.5 0 0 1 1.255-7.138 9.337 9.337 0 0 1 3.3-2.625 9.337 9.337 0 0 1 2.625-.372 9.337 9.337 0 0 1 4.121 2.253 9.5 9.5 0 0 1-1.255 7.138 9.337 9.337 0 0 1-3.3 2.625 9.337 9.337 0 0 1-2.625.372Z" />
@@ -69,18 +63,6 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                     >
                         <HomeIcon className="w-6 h-6 flex-shrink-0" />
                         <span className="font-medium">Dashboard</span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveView('action-plans')}
-                        className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                            activeView === 'action-plans'
-                                ? 'bg-blue-600 text-white'
-                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`}
-                    >
-                        <ChartBarSquareIcon className="w-6 h-6 flex-shrink-0" />
-                        <span className="font-medium">Planos de Ação</span>
                     </button>
                     
                     <button
@@ -158,10 +140,6 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                      <button onClick={() => setIsMobileMenuOpen(true)} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${isNormasActive ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Normas">
                         <ListBulletIcon className="w-6 h-6" />
                         <span className="text-xs mt-1 truncate">Normas</span>
-                    </button>
-                    <button onClick={() => setActiveView('action-plans')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'action-plans' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Planos de Ação">
-                        <ChartBarSquareIcon className="w-6 h-6" />
-                        <span className="text-xs mt-1 truncate">Ações</span>
                     </button>
                      {currentUser?.role === 'Admin' && (
                         <button onClick={() => setActiveView('users')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'users' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Usuários">

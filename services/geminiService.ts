@@ -1,4 +1,4 @@
-import type { AuditInfo, ChecklistItemData, AnalysisData, ObservationData } from '../types';
+import type { AuditInfo, ChecklistItemData, ObservationData } from '../types';
 
 async function callApi<T>(action: string, payload: unknown): Promise<T> {
     try {
@@ -31,18 +31,4 @@ export async function generateObservations(
     standardName: string
 ): Promise<ObservationData> {
     return callApi<ObservationData>('generateObservations', { item, auditInfo, standardName });
-}
-
-export async function generateRootCauseAnalysis(
-    item: ChecklistItemData,
-    auditInfo: AuditInfo,
-    standardName: string
-): Promise<AnalysisData> {
-    try {
-      return await callApi<AnalysisData>('generateRootCauseAnalysis', { item, auditInfo, standardName });
-    } catch (error) {
-      console.error("Gemini API call for root cause analysis failed:", error);
-      // Fallback or re-throw a more specific error
-      throw new Error("A chamada à API para análise de causa raiz falhou. Verifique os logs do servidor.");
-    }
 }

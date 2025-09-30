@@ -7,11 +7,11 @@ import { ReportGenerator } from './components/ReportGenerator';
 import { UserManagement } from './components/UserManagement';
 import { Login } from './components/Login';
 import { LandingPage } from './components/LandingPage';
-import { ActionPlanManagement } from './components/ActionPlanManagement';
-import type { AuditInfo, IsoStandard, ChecklistItemData, User, ActionPlanStatus, AnalysisData } from './types';
+import { Header } from './components/Header';
+import type { AuditInfo, IsoStandard, ChecklistItemData, User } from './types';
 import { Status } from './types';
 import { ISO_STANDARDS } from './constants';
-import { generateObservations, generateRootCauseAnalysis } from './services/geminiService';
+import { generateObservations } from './services/geminiService';
 
 const INITIAL_USERS: User[] = [
     { id: 'user-1', name: 'João Silva', email: 'joao.silva@example.com', role: 'Auditor Líder' },
@@ -34,7 +34,6 @@ export default function App() {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [activeView, setActiveView] = useState<string>('dashboard');
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
-  const [analyzingItemId, setAnalyzingItemId] = useState<string | null>(null);
   const [dashboardFilter, setDashboardFilter] = useState<string>('all'); // 'all' or standard.id
   const [departmentFilter, setDepartmentFilter] = useState<string>('all'); // 'all' or department name
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -98,28 +97,6 @@ export default function App() {
         });
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleAnalyze = useCallback(async (itemId: string, standardId: string) => {
-    setAnalyzingItemId(itemId);
-    try {
-        const standard = standards.find(s => s.id === standardId);
-        const item = standard?.items.find(i => i.id === itemId);
-        if (item && standard) {
-            updateItemInStandards(itemId, standardId, { analysis: { rootCause: 'Analisando com IA...', correctiveActions: 'Aguarde...' } });
-            const analysis = await generateRootCauseAnalysis(item, auditInfo, standard.name);
-            updateItemInStandards(itemId, standardId, { analysis });
-        }
-    } catch (error) {
-        console.error("Failed to generate root cause analysis:", error);
-        updateItemInStandards(itemId, standardId, { analysis: { rootCause: 'Erro ao gerar análise.', correctiveActions: 'Por favor, tente novamente.' } });
-    } finally {
-        setAnalyzingItemId(null);
-    }
-  }, [auditInfo, standards]);
-
-  const handleActionPlanStatusChange = (itemId: string, standardId: string, newStatus: ActionPlanStatus) => {
-    updateItemInStandards(itemId, standardId, { actionPlanStatus: newStatus });
   };
 
   const handleAddUser = (user: Omit<User, 'id'>) => {
@@ -209,6 +186,14 @@ export default function App() {
     };
   }, [standards, dashboardFilter, departmentFilter]);
   
+  const pageTitle = useMemo(() => {
+    if (activeView === 'dashboard') return 'Dashboard';
+    if (activeView === 'report') return 'Gerador de Relatório';
+    if (activeView === 'users') return 'Gerenciamento de Usuários';
+    const standard = standards.find(s => s.id === activeView);
+    return standard ? standard.name : 'Auditoria ISO';
+  }, [activeView, standards]);
+
   const renderContent = () => {
     if (activeView === 'dashboard') {
       return (
@@ -224,10 +209,6 @@ export default function App() {
       );
     }
     
-    if (activeView === 'action-plans') {
-        return <ActionPlanManagement standards={standards} onStatusChange={handleActionPlanStatusChange} />;
-    }
-
     if (activeView === 'report') {
         return <ReportGenerator auditInfo={auditInfo} standards={standards} />;
     }
@@ -256,12 +237,14 @@ export default function App() {
     if (activeStandard) {
       return (
         <>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8">
-                {activeStandard.name}
-                <p className="text-sm text-slate-500 font-normal mt-1">
-                  Uma ferramenta inteligente para auditorias de normas ISO.
-                </p>
-            </h1>
+            <div className="hidden md:block">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8">
+                    {activeStandard.name}
+                    <p className="text-sm text-slate-500 font-normal mt-1">
+                      Uma ferramenta inteligente para auditorias de normas ISO.
+                    </p>
+                </h1>
+            </div>
             
             <AuditInfoForm auditInfo={auditInfo} setAuditInfo={setAuditInfo} />
 
@@ -270,9 +253,7 @@ export default function App() {
                   standard={activeStandard} 
                   onStatusChange={(itemId, newStatus) => handleStatusChange(itemId, newStatus, activeStandard.id)} 
                   onImageUpload={handleImageUpload}
-                  onAnalyze={handleAnalyze}
                   loadingItemId={loadingItemId}
-                  analyzingItemId={analyzingItemId}
                 />
             </div>
         </>
@@ -290,7 +271,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-slate-50 text-slate-800 font-sans flex">
+    <div id="app-view" className="h-screen w-screen bg-slate-50 text-slate-800 font-sans flex">
       <SideNav 
         standards={standards} 
         activeView={activeView} 
@@ -299,6 +280,7 @@ export default function App() {
         onLogout={handleLogout}
       />
       <main className="flex-1 flex flex-col overflow-y-auto pb-16 md:pb-0">
+        <Header title={pageTitle} currentUser={currentUser} onLogout={handleLogout} />
         <div className="p-4 md:p-8 space-y-8">
             <div className="container mx-auto">
               {renderContent()}

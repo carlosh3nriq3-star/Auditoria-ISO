@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import type { ChecklistItemData, AnalysisData } from '../types';
+import type { ChecklistItemData } from '../types';
 import { Status } from '../types';
 import { StatusSelector } from './StatusSelector';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -8,9 +8,7 @@ interface ChecklistItemProps {
   item: ChecklistItemData;
   onStatusChange: (newStatus: Status) => void;
   onImageUpload: (file: File) => void;
-  onAnalyze: () => void;
   isLoading: boolean;
-  isAnalyzing: boolean;
 }
 
 const ObservationDisplay: React.FC<{ observation: ChecklistItemData['observations'] }> = ({ observation }) => {
@@ -65,30 +63,7 @@ const ObservationDisplay: React.FC<{ observation: ChecklistItemData['observation
   return <p className="whitespace-pre-wrap text-slate-700">{JSON.stringify(observation)}</p>;
 };
 
-
-const AnalysisDisplay: React.FC<{ analysis: AnalysisData }> = ({ analysis }) => (
-    <div className="mt-4 p-4 bg-blue-50/50 border border-blue-200 rounded-lg space-y-4">
-        <strong className="text-xs font-bold text-blue-600 uppercase tracking-wider block">Análise IA & Ações Sugeridas</strong>
-        
-        {analysis.fiveWhys && (
-             <div>
-                <h5 className="font-semibold text-sm text-slate-800 mb-2">Análise dos 5 Porquês:</h5>
-                <ol className="list-decimal list-inside space-y-2 text-sm text-slate-700">
-                    {analysis.fiveWhys.map((why, index) => (
-                        <li key={index} className="pl-2 leading-relaxed">{why}</li>
-                    ))}
-                </ol>
-            </div>
-        )}
-        
-        <div className="space-y-2 text-sm text-slate-700 pt-3 border-t border-blue-200">
-            <p><strong>Causa Raiz Identificada:</strong> {analysis.rootCause}</p>
-            <p className="whitespace-pre-wrap"><strong>Ações Corretivas Sugeridas:</strong> {analysis.correctiveActions}</p>
-        </div>
-    </div>
-);
-
-export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChange, onImageUpload, onAnalyze, isLoading, isAnalyzing }) => {
+export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChange, onImageUpload, isLoading }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,19 +138,6 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onStatusChan
                         </div>
                     </div>
                 </div>
-
-                {item.status === Status.NaoConforme && (
-                    <div className="mt-2">
-                        <button
-                            onClick={onAnalyze}
-                            disabled={isAnalyzing}
-                            className="w-full flex items-center justify-center gap-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded-lg transition disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-wait"
-                        >
-                            {isAnalyzing ? <><LoadingSpinner /> Analisando...</> : 'Analisar 5 Porquês com IA'}
-                        </button>
-                    </div>
-                )}
-                {item.analysis && <AnalysisDisplay analysis={item.analysis} />}
             </div>
         </div>
     </div>

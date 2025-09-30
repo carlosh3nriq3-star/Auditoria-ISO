@@ -10,12 +10,6 @@ const FeatureIcon1: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-const FeatureIcon2: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-    </svg>
-);
-
 const FeatureIcon3: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
@@ -58,7 +52,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                             <h3 className="text-3xl font-bold text-slate-800">Funcionalidades Principais</h3>
                             <p className="mt-2 text-slate-500">Tudo que você precisa para uma auditoria eficiente.</p>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-8">
+                        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                             <div className="text-center p-8 bg-slate-50 rounded-2xl shadow-sm">
                                 <div className="flex items-center justify-center h-16 w-16 bg-blue-100 text-blue-600 rounded-full mx-auto mb-4">
                                     <FeatureIcon1 className="w-8 h-8" />
@@ -66,15 +60,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                                 <h4 className="text-xl font-semibold text-slate-800">Geração de Observações com IA</h4>
                                 <p className="mt-2 text-slate-600">
                                     A IA gera automaticamente observações e evidências com base na metodologia FER (Fato, Evidência, Requisito), economizando tempo e garantindo consistência.
-                                </p>
-                            </div>
-                            <div className="text-center p-8 bg-slate-50 rounded-2xl shadow-sm">
-                                <div className="flex items-center justify-center h-16 w-16 bg-blue-100 text-blue-600 rounded-full mx-auto mb-4">
-                                    <FeatureIcon2 className="w-8 h-8" />
-                                </div>
-                                <h4 className="text-xl font-semibold text-slate-800">Análise de Causa Raiz</h4>
-                                <p className="mt-2 text-slate-600">
-                                    Para cada não conformidade, a IA analisa a causa raiz mais provável e sugere ações corretivas eficazes para tratar o problema na origem.
                                 </p>
                             </div>
                              <div className="text-center p-8 bg-slate-50 rounded-2xl shadow-sm">

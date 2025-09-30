@@ -7,14 +7,6 @@ export enum Status {
   NaoAuditado = 'Não Auditado',
 }
 
-export type ActionPlanStatus = 'Pendente' | 'Em Andamento' | 'Concluído';
-
-export interface AnalysisData {
-  rootCause: string;
-  correctiveActions: string;
-  fiveWhys?: string[];
-}
-
 export interface ObservationData {
   fact?: string;
   evidence?: string;
@@ -40,8 +32,6 @@ export interface ChecklistItemData {
   department: string;
   standardName?: string;
   evidenceImage: { data: string; mimeType: string } | null;
-  actionPlanStatus?: ActionPlanStatus;
-  analysis?: AnalysisData;
 }
 
 export interface IsoStandard {
