@@ -1,48 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="pt-BR">
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plataforma de Auditoria ISO</title>
     
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#ffffff" />
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/heroicons/2.0.16/24/outline/heroicons.min.css" rel="stylesheet">
-<style>
-  @media print {
-    body {
-      background-color: white;
-    }
-    .no-print {
-      display: none !important;
-    }
-    #root > div > nav {
-      display: none !important;
-    }
-    main {
-      padding: 0 !important;
-      margin: 0 !important;
-      overflow: visible !important;
-    }
-    #report-container {
-      box-shadow: none !important;
-      border: none !important;
-    }
-    @page {
-      size: A4;
-      margin: 2cm;
-    }
-  }
-</style>
+    <link rel="stylesheet" href="/style.css">
 <script type="importmap">
 {
   "imports": {
-    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.3.24",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
     "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.3.24",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
     "vite": "https://aistudiocdn.com/vite@^7.1.7",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4"
@@ -50,8 +22,8 @@
 }
 </script>
 </head>
-  <body class="bg-slate-100">
+<body class="bg-slate-100 text-slate-800 font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-  </body>
+</body>
 </html>

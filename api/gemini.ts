@@ -1,7 +1,43 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Type } from "@google/genai";
-import type { AuditInfo, ChecklistItemData, AnalysisData } from '../types';
 
+// --- Types (moved from types.ts to make the API self-contained) ---
+enum Status {
+  Conforme = 'Conforme',
+  NaoConforme = 'Não Conforme',
+  NaoAplicavel = 'Não Aplicável',
+  NaoAuditado = 'Não Auditado',
+}
+
+interface AnalysisData {
+  rootCause: string;
+  correctiveActions: string;
+  fiveWhys?: string[];
+}
+
+interface AuditInfo {
+  company: string;
+  department: string;
+  leadAuditor: string;
+  internalAuditors: string;
+  auditees: string;
+  auditDate: string;
+}
+
+interface ChecklistItemData {
+  id: string;
+  requirement: string;
+  description: string;
+  status: Status;
+  observations: string;
+  department: string;
+  standardName?: string;
+  evidenceImage: { data: string; mimeType: string } | null;
+  analysis?: AnalysisData;
+}
+
+
+// --- Prompts ---
 const getObservationsPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standardName: string) => `
     Você é um auditor líder sênior de SGI (ISO 9001, 14001, 45001), especialista em auditorias internas.
     Com base no item do checklist de auditoria e no status selecionado, gere uma observação concisa e profissional para o campo "Observações/Evidências".
@@ -65,7 +101,7 @@ const getFiveWhysPrompt = (item: ChecklistItemData, auditInfo: AuditInfo, standa
     Retorne sua análise no seguinte formato JSON:
 `;
 
-
+// --- API Handler ---
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const API_KEY = process.env.API_KEY;
 

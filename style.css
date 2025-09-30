@@ -1,0 +1,28 @@
+.hidden {
+    display: none !important;
+}
+
+@media print {
+    body {
+      background-color: white;
+    }
+    .no-print {
+      display: none !important;
+    }
+    #app-view > nav { /* Hides both desktop and mobile nav */
+      display: none !important;
+    }
+    main {
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: visible !important;
+    }
+    #report-container {
+      box-shadow: none !important;
+      border: none !important;
+    }
+    @page {
+      size: A4;
+      margin: 2cm;
+    }
+}
