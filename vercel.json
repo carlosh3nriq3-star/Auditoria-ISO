@@ -3,8 +3,8 @@
     { "src": "api/gemini.ts", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/api/gemini", "dest": "/api/gemini.ts" },
     { "handle": "filesystem" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/.*", "dest": "/index.html" }
   ]
 }
