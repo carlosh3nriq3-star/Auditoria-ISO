@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+
+
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { SideNav } from './components/SideNav';
 import { AuditInfoForm } from './components/AuditInfoForm';
 import { Checklist } from './components/Checklist';
@@ -34,14 +36,40 @@ const INITIAL_ROLES: Role[] = [
 ];
 
 const INITIAL_USERS: User[] = [
-    { id: 'user-1', name: 'João Silva', email: 'joao.silva@example.com', roleId: 'role-lead', allowedDepartments: ['Dashboard', 'Relatório', 'Histórico', 'ISO 9001:2015', 'ISO 14001:2015'] },
-    { id: 'user-2', name: 'Maria Souza', email: 'maria.souza@example.com', roleId: 'role-auditor', allowedDepartments: ['Dashboard', 'ISO 45001:2018'] },
-    { id: 'user-3', name: 'Pedro Santos', email: 'pedro.santos@example.com', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS },
-    { id: 'user-4', name: 'Admin User', email: 'admin@example.com', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS },
+    { id: 'user-1', name: 'João Silva', email: 'joao.silva@example.com', password: '123', roleId: 'role-lead', allowedDepartments: ['Dashboard', 'Relatório', 'Histórico', 'ISO 9001:2015', 'ISO 14001:2015'] },
+    { id: 'user-2', name: 'Maria Souza', email: 'maria.souza@example.com', password: '123', roleId: 'role-auditor', allowedDepartments: ['Dashboard', 'ISO 45001:2018'] },
+    { id: 'user-3', name: 'Pedro Santos', email: 'pedro.santos@example.com', password: '123', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS },
+    { id: 'user-4', name: 'Admin', email: 'admin@admin.com', password: 'admin', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS },
 ];
 
+// Custom hook for persisting state to localStorage
+function usePersistentState<T>(key: string, initialValue: T | (() => T)): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [state, setState] = useState<T>(() => {
+    try {
+      const storedValue = window.localStorage.getItem(key);
+      if (storedValue) {
+        return JSON.parse(storedValue);
+      }
+    } catch (error) {
+      console.error(`Error reading localStorage key "${key}":`, error);
+    }
+    return initialValue instanceof Function ? initialValue() : initialValue;
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(state));
+    } catch (error) {
+      console.error(`Error setting localStorage key "${key}":`, error);
+    }
+  }, [key, state]);
+
+  return [state, setState];
+}
+
+
 export default function App() {
-  const [auditInfo, setAuditInfo] = useState<AuditInfo>({
+  const [auditInfo, setAuditInfo] = usePersistentState<AuditInfo>('auditInfo', {
     company: 'Empresa Exemplo S.A.',
     department: 'Produção',
     leadAuditor: 'João Silva',
@@ -50,18 +78,25 @@ export default function App() {
     auditDate: new Date().toLocaleDateString('pt-BR'),
   });
 
-  const [standards, setStandards] = useState<IsoStandard[]>(() => JSON.parse(JSON.stringify(ISO_STANDARDS)));
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [standards, setStandards] = usePersistentState<IsoStandard[]>('standards', () => JSON.parse(JSON.stringify(ISO_STANDARDS)));
+  const [users, setUsers] = usePersistentState<User[]>('users', INITIAL_USERS);
   const roles: Role[] = INITIAL_ROLES;
-  const [activeView, setActiveView] = useState<string>('dashboard');
-  const [dashboardFilter, setDashboardFilter] = useState<string>('all'); // 'all' or standard.id
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all'); // 'all' or department name
+  const [activeView, setActiveView] = usePersistentState<string>('activeView', 'dashboard');
+  const [dashboardFilter, setDashboardFilter] = usePersistentState<string>('dashboardFilter', 'all'); // 'all' or standard.id
+  const [departmentFilter, setDepartmentFilter] = usePersistentState<string>('departmentFilter', 'all'); // 'all' or department name
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
   const [loginError, setLoginError] = useState<string>('');
   const [showLogin, setShowLogin] = useState<boolean>(false);
   const [generatingItems, setGeneratingItems] = useState<Set<string>>(new Set());
-  const [completedAudits, setCompletedAudits] = useState<CompletedAudit[]>([]);
-  const [historyFilters, setHistoryFilters] = useState({
+  const [completedAudits, setCompletedAudits] = usePersistentState<CompletedAudit[]>('completedAudits', []);
+  // FIX: Explicitly typed the state for usePersistentState to resolve a type inference issue where
+  // historyFilters properties were being inferred as `unknown`. This ensures `historyFilters.startDate`
+  // and `historyFilters.endDate` are correctly typed as strings for use in `new Date()`.
+  const [historyFilters, setHistoryFilters] = usePersistentState<{
+    company: string;
+    startDate: string;
+    endDate: string;
+  }>('historyFilters', {
     company: '',
     startDate: '',
     endDate: '',
@@ -69,7 +104,7 @@ export default function App() {
 
   const handleLogin = (email: string, password: string): void => {
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (user) {
+      if (user && user.password === password) {
           const role = roles.find(r => r.id === user.roleId);
           if (role) {
             const initialView = user.allowedDepartments.includes('Dashboard') ? 'dashboard' : user.allowedDepartments[0] || '';
@@ -82,12 +117,11 @@ export default function App() {
             });
             setShowLogin(false);
             setLoginError('');
-            setActiveView(viewId);
           } else {
             setLoginError('Função de usuário inválida ou não encontrada.');
           }
       } else {
-          setLoginError('Usuário não encontrado.');
+          setLoginError('E-mail ou senha incorretos.');
       }
   };
 
@@ -186,8 +220,13 @@ export default function App() {
   };
 
   const handleAddUser = (user: Omit<User, 'id'>) => {
-    const newUser = { ...user, id: `user-${Date.now()}` };
+    const defaultPassword = 'password123';
+    const newUser = { ...user, id: `user-${Date.now()}`, password: defaultPassword };
     setUsers(prevUsers => [...prevUsers, newUser]);
+    
+    // Simula o envio de um e-mail de configuração de senha
+    console.log(`Simulando envio de e-mail para ${newUser.email} com senha temporária: ${defaultPassword}`);
+    alert(`Um e-mail de configuração de senha foi enviado para ${newUser.email}. A senha temporária é: ${defaultPassword}`);
   };
 
   const handleUpdateUser = (updatedUser: User) => {
@@ -202,6 +241,23 @@ export default function App() {
     setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
   };
   
+  const departmentsForFilter = useMemo(() => {
+    const allPossibleDepts = new Set(accessibleStandards.flatMap(s => s.items.map(item => item.department)));
+    const auditedDepartment = auditInfo.department.trim();
+
+    if (auditedDepartment && !auditedDepartment.includes(',') && allPossibleDepts.has(auditedDepartment)) {
+        return ['all', auditedDepartment];
+    }
+
+    return ['all', ...Array.from(allPossibleDepts).sort()];
+  }, [accessibleStandards, auditInfo.department]);
+
+  useEffect(() => {
+    if (!departmentsForFilter.includes(departmentFilter)) {
+        setDepartmentFilter('all');
+    }
+  }, [departmentsForFilter, departmentFilter, setDepartmentFilter]);
+
   const dashboardStats = useMemo(() => {
     const allItemsFromAllStandards = accessibleStandards.flatMap(s => s.items.map(item => ({ ...item, standardName: s.name, standardId: s.id })));
     
@@ -216,48 +272,48 @@ export default function App() {
     const totalItems = filteredItemsForStats.length;
     const auditedItems = filteredItemsForStats.filter(item => item.status !== Status.NaoAuditado);
     const auditedItemsCount = auditedItems.length;
+    const nonCompliantItems = auditedItems.filter(item => item.status === Status.NaoConforme);
     const compliantItems = auditedItems.filter(item => item.status === Status.Conforme);
-    const nonCompliantItems = filteredItemsForStats.filter(item => item.status === Status.NaoConforme);
 
-    const compliancePercentage = auditedItemsCount > 0 ? (compliantItems.length / auditedItemsCount) * 100 : 0;
+    const auditableItemsForCompliance = auditedItems.filter(i => i.status === Status.Conforme || i.status === Status.NaoConforme).length;
+    const compliancePercentage = auditableItemsForCompliance > 0
+        ? (compliantItems.length / auditableItemsForCompliance) * 100
+        : 0;
+
     const overallProgress = totalItems > 0 ? (auditedItemsCount / totalItems) * 100 : 0;
-
-    const complianceByStandard = accessibleStandards
-      .filter(s => dashboardFilter === 'all' || s.id === dashboardFilter)
-      .map(standard => {
-        const standardItemsFilteredByDept = departmentFilter === 'all'
-            ? standard.items
-            : standard.items.filter(item => item.department === departmentFilter);
-
-        const conforme = standardItemsFilteredByDept.filter(i => i.status === Status.Conforme).length;
-        const naoConforme = standardItemsFilteredByDept.filter(i => i.status === Status.NaoConforme).length;
-        return { id: standard.id, name: standard.name, conforme, naoConforme };
-      });
     
-    const statusByRequirement = Object.values(
-      filteredItemsForStats.reduce((acc, item) => {
-        if (item.status === Status.NaoAuditado) {
-          return acc; // Do not include not-audited items in the chart
+    const complianceByStandard = accessibleStandards.map(standard => {
+        const standardItems = standard.items.filter(item => 
+            departmentFilter === 'all' || item.department === departmentFilter
+        );
+        const conforme = standardItems.filter(item => item.status === Status.Conforme).length;
+        const naoConforme = standardItems.filter(item => item.status === Status.NaoConforme).length;
+        return { id: standard.id, name: standard.name, conforme, naoConforme };
+    });
+
+    const statusByRequirement: { requirement: string; [Status.Conforme]: number; [Status.NaoConforme]: number; [Status.NaoAplicavel]: number; }[] = [];
+    
+    const relevantRequirements = [...new Set(filteredItemsForStats.map(i => i.requirement))].sort();
+
+    relevantRequirements.forEach(req => {
+        const itemsForReq = filteredItemsForStats.filter(i => i.requirement === req);
+        const conformeCount = itemsForReq.filter(i => i.status === Status.Conforme).length;
+        const naoConformeCount = itemsForReq.filter(i => i.status === Status.NaoConforme).length;
+        const naoAplicavelCount = itemsForReq.filter(i => i.status === Status.NaoAplicavel).length;
+        
+        if (conformeCount > 0 || naoConformeCount > 0 || naoAplicavelCount > 0) {
+            statusByRequirement.push({
+                requirement: req,
+                [Status.Conforme]: conformeCount,
+                [Status.NaoConforme]: naoConformeCount,
+                [Status.NaoAplicavel]: naoAplicavelCount,
+            });
         }
-        const req = item.requirement;
-        if (!acc[req]) {
-          acc[req] = {
-            requirement: req,
-            [Status.Conforme]: 0,
-            [Status.NaoConforme]: 0,
-            [Status.NaoAplicavel]: 0,
-          };
-        }
-        if (item.status === Status.Conforme || item.status === Status.NaoConforme || item.status === Status.NaoAplicavel) {
-            acc[req][item.status]++;
-        }
-        return acc;
-      }, {} as Record<string, { requirement: string; 'Conforme': number; 'Não Conforme': number; 'Não Aplicável': number }>)
-    ).sort((a: { requirement: string }, b: { requirement: string }) => a.requirement.localeCompare(b.requirement, undefined, { numeric: true }));
+    });
 
     return {
       auditedItemsCount,
-      compliancePercentage,
+      compliancePercentage: isNaN(compliancePercentage) ? 0 : compliancePercentage,
       nonCompliantCount: nonCompliantItems.length,
       overallProgress,
       complianceByStandard,
@@ -265,196 +321,74 @@ export default function App() {
     };
   }, [accessibleStandards, dashboardFilter, departmentFilter]);
   
-  const handleFinalizeAudit = () => {
-    if (!window.confirm("Você tem certeza que deseja finalizar e arquivar esta auditoria? O checklist atual será reiniciado.")) {
-        return;
+  const activeStandard = useMemo(() => standards.find(s => s.id === activeView), [standards, activeView]);
+  const completedAuditToView = useMemo(() => completedAudits.find(a => `history-${a.id}` === activeView), [completedAudits, activeView]);
+
+  const handleFinishAudit = () => {
+    if (window.confirm('Tem certeza que deseja finalizar e arquivar esta auditoria? Esta ação não pode ser desfeita.')) {
+        const allItems = standards.flatMap(s => s.items);
+        const auditableItems = allItems.filter(i => i.status === Status.Conforme || i.status === Status.NaoConforme);
+        const compliantItems = auditableItems.filter(i => i.status === Status.Conforme);
+        const nonCompliantItems = auditableItems.filter(i => i.status === Status.NaoConforme);
+
+        const compliancePercentage = auditableItems.length > 0 ? (compliantItems.length / auditableItems.length) * 100 : 0;
+
+        const newCompletedAudit: CompletedAudit = {
+            id: Date.now().toString(),
+            completionDate: new Date().toLocaleDateString('pt-BR'),
+            auditInfo: { ...auditInfo },
+            standards: JSON.parse(JSON.stringify(standards)),
+            summary: {
+                compliancePercentage: isNaN(compliancePercentage) ? 0 : compliancePercentage,
+                nonCompliantCount: nonCompliantItems.length,
+            }
+        };
+
+        setCompletedAudits(prev => [...prev, newCompletedAudit]);
+        
+        // Reset state for a new audit
+        setStandards(JSON.parse(JSON.stringify(ISO_STANDARDS)));
+        setAuditInfo({
+            company: 'Empresa Exemplo S.A.',
+            department: 'Produção',
+            leadAuditor: currentUser?.name || '',
+            internalAuditors: '',
+            auditees: '',
+            auditDate: new Date().toLocaleDateString('pt-BR'),
+        });
+        
+        setActiveView('dashboard');
+        alert('Auditoria finalizada e arquivada com sucesso!');
     }
-
-    const newCompletedAudit: CompletedAudit = {
-        id: Date.now().toString(),
-        completionDate: new Date().toLocaleDateString('pt-BR'),
-        auditInfo: { ...auditInfo, auditDate: new Date().toLocaleDateString('pt-BR') }, // Capture current info
-        standards: JSON.parse(JSON.stringify(standards)), // Deep copy of standards state
-        summary: {
-            compliancePercentage: dashboardStats.compliancePercentage,
-            nonCompliantCount: dashboardStats.nonCompliantCount,
-        },
-    };
-
-    setCompletedAudits(prev => [...prev, newCompletedAudit]);
-
-    // Reset for next audit
-    setStandards(JSON.parse(JSON.stringify(ISO_STANDARDS)));
-    alert("Auditoria arquivada com sucesso! Um novo checklist está pronto para começar.");
-    setActiveView('history');
   };
-
-  const filteredAudits = useMemo(() => {
-    const { company, startDate, endDate } = historyFilters;
-
-    const parseBrDate = (dateString: string): Date => {
-        const [day, month, year] = dateString.split('/');
-        return new Date(Number(year), Number(month) - 1, Number(day));
-    };
-
-    const startFilterDate = startDate ? new Date(startDate) : null;
-    const endFilterDate = endDate ? new Date(endDate) : null;
-
-    if (endFilterDate) {
-        endFilterDate.setHours(23, 59, 59, 999);
-    }
-
+  
+  const filteredCompletedAudits = useMemo(() => {
     return completedAudits.filter(audit => {
-        const companyMatch = company === '' || audit.auditInfo.company.toLowerCase().includes(company.toLowerCase());
-        const auditDate = parseBrDate(audit.completionDate);
-        const startDateMatch = !startFilterDate || auditDate >= startFilterDate;
-        const endDateMatch = !endFilterDate || auditDate <= endFilterDate;
-        return companyMatch && startDateMatch && endDateMatch;
+      const companyMatch = !historyFilters.company || audit.auditInfo.company.toLowerCase().includes(historyFilters.company.toLowerCase());
+      if (historyFilters.startDate && historyFilters.endDate && historyFilters.startDate > historyFilters.endDate) {
+        return false;
+      }
+      const dateParts = audit.completionDate.split('/');
+      const date = new Date(+dateParts[2], +dateParts[1] - 1, +dateParts[0]);
+      
+      const startDateMatch = !historyFilters.startDate || date >= new Date(historyFilters.startDate);
+      const endDateMatch = !historyFilters.endDate || date <= new Date(historyFilters.endDate);
+
+      return companyMatch && startDateMatch && endDateMatch;
     });
   }, [completedAudits, historyFilters]);
 
-  const activeStandard = accessibleStandards.find(s => s.id === activeView);
-
-  const departmentsForFilter = useMemo(() => {
-    const allItems = accessibleStandards.flatMap(s => s.items);
-    const departments = new Set(allItems.map(item => item.department));
-    return ['all', ...Array.from(departments).sort()];
-  }, [accessibleStandards]);
-
-  const pageTitle = useMemo(() => {
-    if (activeView === 'dashboard') return 'Dashboard';
-    if (activeView === 'report') return 'Gerador de Relatório';
-    if (activeView === 'users') return 'Gerenciamento de Usuários';
-    if (activeView === 'history') return 'Histórico de Auditorias';
-    if (activeView.startsWith('history-')) return 'Detalhes da Auditoria Arquivada';
-    const standard = standards.find(s => s.id === activeView);
-    return standard ? standard.name : 'Auditoria ISO';
-  }, [activeView, standards]);
-
-  const AccessDenied = () => (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white rounded-2xl shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-        <h2 className="text-2xl font-bold text-slate-800">Acesso Negado</h2>
-        <p className="text-slate-500 mt-2">Você não tem permissão para acessar esta página. Contate um administrador.</p>
-    </div>
-  );
-
-  const renderContent = () => {
-    if (!currentUser) return null;
-    
-    if (activeView === 'dashboard') {
-      if (!currentUser.allowedDepartments.includes('Dashboard')) return <AccessDenied />;
-      return (
-        <Dashboard 
-            stats={dashboardStats}
-            standards={accessibleStandards}
-            filter={dashboardFilter}
-            setFilter={setDashboardFilter}
-            departmentFilter={departmentFilter}
-            setDepartmentFilter={setDepartmentFilter}
-            departments={departmentsForFilter}
-        />
-      );
-    }
-    
-    if (activeView === 'report') {
-        if (!currentUser.allowedDepartments.includes('Relatório')) return <AccessDenied />;
-        return <ReportGenerator auditInfo={auditInfo} standards={accessibleStandards} />;
-    }
-
-    if (activeView === 'users') {
-        if (!currentUser.allowedDepartments.includes('Usuários')) return <AccessDenied />;
-        return <UserManagement 
-            users={users} 
-            roles={roles}
-            onAddUser={handleAddUser}
-            onUpdateUser={handleUpdateUser}
-            onDeleteUser={handleDeleteUser}
-            currentUser={currentUser}
-            allEnvironments={ALL_ENVIRONMENTS}
-        />;
-    }
-
-    if (activeView === 'history') {
-        if (!currentUser.allowedDepartments.includes('Histórico')) return <AccessDenied />;
-        return (
-          <AuditHistory 
-            audits={filteredAudits} 
-            onViewAudit={(id) => setActiveView(`history-${id}`)} 
-            filters={historyFilters}
-            onFilterChange={setHistoryFilters}
-          />
-        );
-    }
-
-    if (activeView.startsWith('history-')) {
-        if (!currentUser.allowedDepartments.includes('Histórico')) return <AccessDenied />;
-        const auditId = activeView.split('-')[1];
-        const selectedAudit = completedAudits.find(a => a.id === auditId);
-        if (selectedAudit) {
-            return <CompletedAuditView audit={selectedAudit} onBack={() => setActiveView('history')} />;
-        }
-        return <p>Auditoria não encontrada.</p>;
-    }
-    
-    if (activeStandard) {
-      const canPerformAudit = currentUser.permissions.includes('PERFORM_AUDIT');
-      const canFinalize = currentUser.permissions.includes('GENERATE_REPORTS');
-      return (
-        <>
-            <div className="hidden md:block">
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8">
-                    {activeStandard.name}
-                    <p className="text-sm text-slate-500 font-normal mt-1">
-                      Uma ferramenta inteligente para auditorias de normas ISO.
-                    </p>
-                </h1>
-            </div>
-            
-            <AuditInfoForm auditInfo={auditInfo} setAuditInfo={setAuditInfo} />
-            
-            {canFinalize && (
-                 <div className="mt-8 -mb-4 flex justify-end">
-                    <button
-                        onClick={handleFinalizeAudit}
-                        className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition flex items-center gap-2 shadow-sm disabled:bg-slate-400"
-                        disabled={dashboardStats.auditedItemsCount === 0}
-                        title={dashboardStats.auditedItemsCount === 0 ? "Audite ao menos um item para poder finalizar." : "Salva a auditoria atual no histórico e reinicia o checklist."}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
-                        Finalizar e Arquivar Auditoria
-                    </button>
-                </div>
-            )}
-
-            <div className="mt-8 bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
-                <Checklist 
-                  standard={activeStandard} 
-                  onStatusChange={(itemId, newStatus) => handleStatusChange(itemId, newStatus, activeStandard.id)}
-                  onObservationChange={(itemId, value) => handleObservationChange(itemId, activeStandard.id, value)}
-                  onImageUpload={handleImageUpload}
-                  generatingItems={generatingItems}
-                  canEdit={canPerformAudit}
-                />
-            </div>
-        </>
-      );
-    }
-    
-    return <p>Selecione uma norma para começar ou verifique suas permissões de acesso.</p>;
-  }
 
   if (!currentUser) {
-    if (showLogin) {
-        return <Login onLogin={handleLogin} error={loginError} onBack={() => setShowLogin(false)} />;
-    }
-    return <LandingPage onLoginClick={() => setShowLogin(true)} />;
+    return showLogin 
+      ? <Login onLogin={handleLogin} error={loginError} onBack={() => setShowLogin(false)} />
+      : <LandingPage onLoginClick={() => setShowLogin(true)} />;
   }
+  
+  const canPerformAudit = currentUser.permissions.includes('PERFORM_AUDIT');
 
   return (
-    <div id="app-view" className="h-screen w-screen bg-slate-50 text-slate-800 font-sans flex">
+    <div id="app-view" className="flex h-screen bg-slate-100">
       <SideNav 
         standards={accessibleStandards} 
         activeView={activeView} 
@@ -462,14 +396,57 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
       />
-      <main className="flex-1 flex flex-col overflow-y-auto pb-16 md:pb-0">
-        <Header title={pageTitle} currentUser={currentUser} onLogout={handleLogout} />
-        <div className="p-4 md:p-8 space-y-8">
-            <div className="container mx-auto">
-              {renderContent()}
-            </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header 
+            title={activeStandard?.name || (completedAuditToView ? "Detalhes da Auditoria" : activeView.charAt(0).toUpperCase() + activeView.slice(1))}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+        />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-8 pb-20 md:pb-8">
+            {activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'users' && !activeView.startsWith('history') && (
+                <AuditInfoForm auditInfo={auditInfo} setAuditInfo={setAuditInfo} />
+            )}
+            
+            {activeView === 'dashboard' && currentUser.permissions.includes('VIEW_DASHBOARD') && (
+                <Dashboard 
+                    stats={dashboardStats} 
+                    standards={accessibleStandards}
+                    filter={dashboardFilter}
+                    setFilter={setDashboardFilter}
+                    departmentFilter={departmentFilter}
+                    setDepartmentFilter={setDepartmentFilter}
+                    departments={departmentsForFilter}
+                />
+            )}
+            
+            {activeStandard && (
+              <Checklist
+                standard={activeStandard}
+                onStatusChange={(itemId, newStatus) => handleStatusChange(itemId, newStatus, activeStandard.id)}
+                onObservationChange={(itemId, value) => handleObservationChange(itemId, activeStandard.id, value)}
+                onImageUpload={handleImageUpload}
+                generatingItems={generatingItems}
+                canEdit={canPerformAudit}
+              />
+            )}
+            
+            {activeView === 'report' && currentUser.permissions.includes('GENERATE_REPORTS') && (
+                <ReportGenerator auditInfo={auditInfo} standards={accessibleStandards} />
+            )}
+
+            {activeView === 'users' && currentUser.permissions.includes('MANAGE_USERS') && (
+                <UserManagement
+                    users={users}
+                    roles={roles}
+                    onAddUser={handleAddUser}
+                    onUpdateUser={handleUpdateUser}
+                    onDeleteUser={handleDeleteUser}
+                    currentUser={currentUser}
+                    allEnvironments={ALL_ENVIRONMENTS}
+                />
+            )}
+            
+            {activeView === 'history' && (
+                <AuditHistory 
+                    audits={filteredCompletedAudits} 
+                    onViewAudit={(id) => setActiveView(`history-${id}`)} 

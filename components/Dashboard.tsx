@@ -89,7 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, standards, filter, 
         </div>
 
         <div className="flex items-center gap-2">
-            <label htmlFor="department-filter" className="text-sm font-medium text-slate-600">Departamento:</label>
+            <label htmlFor="department-filter" className="text-sm font-medium text-slate-600">Área/Departamento:</label>
             <select
               id="department-filter"
               value={departmentFilter}
