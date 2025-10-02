@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { SideNav } from './components/SideNav';
 import { AuditInfoForm } from './components/AuditInfoForm';
@@ -446,7 +447,43 @@ export default function App() {
                 />
             )}
             
+            {/* FIX: Pass missing `filters` and `onFilterChange` props to the AuditHistory component to resolve a TypeScript error. */}
             {activeView === 'history' && (
                 <AuditHistory 
                     audits={filteredCompletedAudits} 
-                    onViewAudit={(id) => setActiveView(`history-${id}`)} 
+                    onViewAudit={(id) => setActiveView(`history-${id}`)}
+                    filters={historyFilters}
+                    onFilterChange={setHistoryFilters}
+                />
+            )}
+            
+            {completedAuditToView && (
+                <CompletedAuditView audit={completedAuditToView} onBack={() => setActiveView('history')} />
+            )}
+
+            {!activeStandard && activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'users' && activeView !== 'history' && !completedAuditToView && (
+                 <div className="flex flex-col items-center justify-center h-full text-center text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mb-4 text-slate-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-4.5 0V6.375c0-.621.504-1.125 1.125-1.125h2.25M13.5 10.5H21M13.5 6H21" />
+                    </svg>
+                    <h2 className="text-xl font-semibold">Selecione uma opção no menu</h2>
+                    <p>Escolha um dashboard, norma ou relatório para começar.</p>
+                </div>
+            )}
+            
+            {canPerformAudit && activeStandard && (
+                <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-40">
+                    <button 
+                        onClick={handleFinishAudit}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition transform hover:scale-105 flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                        Finalizar Auditoria
+                    </button>
+                </div>
+            )}
+        </main>
+      </div>
+    </div>
+  );
+}

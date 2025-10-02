@@ -116,11 +116,11 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                         </button>
                     )}
 
-                    {standards.length > 0 && (
-                        <div className="pt-2">
-                            <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Normas</h3>
-                            <div className="mt-2 space-y-2">
-                                {standards.map((standard) => {
+                    <div className="pt-2">
+                        <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Normas</h3>
+                        <div className="mt-2 space-y-2">
+                            {standards.length > 0 ? (
+                                standards.map((standard) => {
                                     const Icon = standard.icon;
                                     return (
                                         <button
@@ -136,10 +136,12 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                                             <span className="font-medium">{standard.name}</span>
                                         </button>
                                     );
-                                })}
-                            </div>
+                                })
+                            ) : (
+                                <p className="px-3 text-sm text-slate-400 italic">Nenhuma norma atribuída.</p>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
                 <div className="p-4 border-t border-slate-700">
                     <div className="flex items-center gap-3">
