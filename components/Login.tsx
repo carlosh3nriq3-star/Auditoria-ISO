@@ -3,17 +3,9 @@ import React, { useState } from 'react';
 interface LoginProps {
     onLogin: (email: string, password: string) => void;
     error: string;
-    onBack: () => void;
 }
 
-const BackArrowIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-    </svg>
-);
-
-
-export const Login: React.FC<LoginProps> = ({ onLogin, error, onBack }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -25,14 +17,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, error, onBack }) => {
     return (
         <div className="flex items-center justify-center min-h-screen bg-slate-100 p-4">
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg relative">
-                 <button 
-                    onClick={onBack} 
-                    className="absolute top-4 left-4 text-slate-400 hover:text-slate-700 transition-colors p-2 rounded-full"
-                    aria-label="Voltar para a página inicial"
-                >
-                    <BackArrowIcon className="w-6 h-6" />
-                </button>
-                <div className="text-center pt-8">
+                <div className="text-center">
                     <h1 className="text-3xl font-bold text-slate-900">Acesse sua Conta</h1>
                     <p className="mt-2 text-sm text-slate-600">Bem-vindo de volta!</p>
                 </div>

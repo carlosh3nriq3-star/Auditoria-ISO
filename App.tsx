@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { SideNav } from './components/SideNav';
 import { AuditInfoForm } from './components/AuditInfoForm';
@@ -10,7 +6,6 @@ import { Dashboard } from './components/Dashboard';
 import { ReportGenerator } from './components/ReportGenerator';
 import { UserManagement } from './components/UserManagement';
 import { Login } from './components/Login';
-import { LandingPage } from './components/LandingPage';
 import { Header } from './components/Header';
 import { AuditHistory } from './components/AuditHistory';
 import { CompletedAuditView } from './components/CompletedAuditView';
@@ -88,10 +83,9 @@ export default function App() {
   const [departmentFilter, setDepartmentFilter] = usePersistentState<string>('departmentFilter', 'all'); // 'all' or department name
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
   const [loginError, setLoginError] = useState<string>('');
-  const [showLogin, setShowLogin] = useState<boolean>(false);
   const [generatingItems, setGeneratingItems] = useState<Set<string>>(new Set());
   const [completedAudits, setCompletedAudits] = usePersistentState<CompletedAudit[]>('completedAudits', []);
-  // FIX: Explicitly typed the state for usePersistentState to resolve a type inference issue where
+  // Fix: Explicitly typed the state for usePersistentState to resolve a type inference issue where
   // historyFilters properties were being inferred as `unknown`. This ensures `historyFilters.startDate`
   // and `historyFilters.endDate` are correctly typed as strings for use in `new Date()`.
   const [historyFilters, setHistoryFilters] = usePersistentState<{
@@ -117,7 +111,6 @@ export default function App() {
                 permissions: role.permissions,
                 roleName: role.name,
             });
-            setShowLogin(false);
             setLoginError('');
           } else {
             setLoginError('Função de usuário inválida ou não encontrada.');
@@ -129,7 +122,6 @@ export default function App() {
 
   const handleLogout = (): void => {
       setCurrentUser(null);
-      setShowLogin(false);
       setActiveView('dashboard');
   };
 
@@ -366,15 +358,18 @@ export default function App() {
   
   const filteredCompletedAudits = useMemo(() => {
     return completedAudits.filter(audit => {
-      const companyMatch = !historyFilters.company || audit.auditInfo.company.toLowerCase().includes(historyFilters.company.toLowerCase());
-      if (historyFilters.startDate && historyFilters.endDate && historyFilters.startDate > historyFilters.endDate) {
+      // FIX: Explicitly cast historyFilters properties to string to prevent type errors.
+      // This handles cases where values from localStorage might be inferred as `unknown`,
+      // which would cause errors in string operations and Date constructors.
+      const companyMatch = !historyFilters.company || audit.auditInfo.company.toLowerCase().includes(String(historyFilters.company).toLowerCase());
+      if (historyFilters.startDate && historyFilters.endDate && String(historyFilters.startDate) > String(historyFilters.endDate)) {
         return false;
       }
       const dateParts = audit.completionDate.split('/');
       const date = new Date(+dateParts[2], +dateParts[1] - 1, +dateParts[0]);
       
-      const startDateMatch = !historyFilters.startDate || date >= new Date(historyFilters.startDate);
-      const endDateMatch = !historyFilters.endDate || date <= new Date(historyFilters.endDate);
+      const startDateMatch = !historyFilters.startDate || date >= new Date(String(historyFilters.startDate));
+      const endDateMatch = !historyFilters.endDate || date <= new Date(String(historyFilters.endDate));
 
       return companyMatch && startDateMatch && endDateMatch;
     });
@@ -382,9 +377,7 @@ export default function App() {
 
 
   if (!currentUser) {
-    return showLogin 
-      ? <Login onLogin={handleLogin} error={loginError} onBack={() => setShowLogin(false)} />
-      : <LandingPage onLoginClick={() => setShowLogin(true)} />;
+    return <Login onLogin={handleLogin} error={loginError} />;
   }
   
   const canPerformAudit = currentUser.permissions.includes('PERFORM_AUDIT');

@@ -2,42 +2,29 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
 import type { ChecklistItemData } from '../types';
 
-const getPrompt = (item: ChecklistItemData, standardName: string): string => {
-  const { requirement, description, status } = item;
+const systemInstruction = `Aja como um auditor experiente de normas ISO. Sua tarefa é gerar uma observação de auditoria concisa e profissional para um item de checklist, seguindo estritamente a metodologia FER (Fato, Evidência, Requisito).
 
-  return `
-    Aja como um auditor experiente de normas ISO. Sua tarefa é gerar uma observação de auditoria concisa e profissional para um item de checklist, seguindo estritamente a metodologia FER (Fato, Evidência, Requisito).
+**Instruções de Formato:**
+Sempre use o seguinte formato de resposta:
+FATO: [Descrição do fato encontrado]
+EVIDÊNCIA: [Descrição da evidência que comprova o fato]
+REQUISITO: [Norma e requisito auditado]
 
-    **Contexto da Auditoria:**
-    - **Norma:** ${standardName}
-    - **Requisito:** ${requirement}
-    - **Descrição do Requisito:** ${description}
-    - **Status da Auditoria:** ${status}
+**Instruções de Conteúdo:**
+1.  **Fato:** Descreva a situação encontrada de forma objetiva. Se o status for 'Conforme', descreva uma boa prática ou a conformidade. Se for 'Não Conforme', descreva a falha ou o desvio.
+2.  **Evidência:** Apresente a evidência que suporta o fato. Seja específico e criativo, sugerindo tipos comuns de evidências para este tipo de requisito (ex: "Documento X, rev. 02", "Entrevista com Fulano", "Registro de treinamento", "Visualização do processo Y").
+3.  **Requisito:** Cite o requisito da norma que foi auditado.
 
-    **Instruções:**
-    1.  **Fato:** Descreva a situação encontrada de forma objetiva. Se o status for 'Conforme', descreva uma boa prática ou a conformidade. Se for 'Não Conforme', descreva a falha ou o desvio.
-    2.  **Evidência:** Apresente a evidência que suporta o fato. Seja específico e criativo, sugerindo tipos comuns de evidências para este tipo de requisito (ex: "Documento X, rev. 02", "Entrevista com Fulano", "Registro de treinamento", "Visualização do processo Y").
-    3.  **Requisito:** Cite o requisito da norma que foi auditado.
+**Exemplo (Conforme):**
+FATO: O processo para gerenciar informação documentada está implementado e mantido.
+EVIDÊNCIA: Verificado o procedimento "Controle de Documentos" código DOC-QAL-001, rev. 03, e confirmada sua aplicação nas áreas de Produção e Engenharia.
+REQUISITO: ISO 9001:2015 - 7.5
 
-    **Formato da Resposta:**
-    Use o seguinte formato, substituindo o texto entre colchetes:
-    FATO: [Descrição do fato encontrado]
-    EVIDÊNCIA: [Descrição da evidência que comprova o fato]
-    REQUISITO: [Norma e requisito auditado, ex: ${standardName} - ${requirement}]
+**Exemplo (Não Conforme):**
+FATO: A política da qualidade não está comunicada e entendida por todos na organização.
+EVIDÊNCIA: Em entrevista com 3 operadores da linha de produção, 2 não souberam explicar a política da qualidade ou onde encontrá-la.
+REQUISITO: ISO 9001:2015 - 5.2`;
 
-    **Exemplo (Conforme):**
-    FATO: O processo para gerenciar informação documentada está implementado e mantido.
-    EVIDÊNCIA: Verificado o procedimento "Controle de Documentos" código DOC-QAL-001, rev. 03, e confirmada sua aplicação nas áreas de Produção e Engenharia.
-    REQUISITO: ISO 9001:2015 - 7.5
-
-    **Exemplo (Não Conforme):**
-    FATO: A política da qualidade não está comunicada e entendida por todos na organização.
-    EVIDÊNCIA: Em entrevista com 3 operadores da linha de produção, 2 não souberam explicar a política da qualidade ou onde encontrá-la.
-    REQUISITO: ISO 9001:2015 - 5.2
-
-    Agora, gere a observação para o item fornecido.
-  `;
-};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
@@ -59,11 +46,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        const prompt = getPrompt(item, standardName);
+        const { requirement, description, status }: ChecklistItemData = item;
+        const userPrompt = `Gere a observação de auditoria para o seguinte item:
+
+**Norma:** ${standardName}
+**Requisito:** ${requirement}
+**Descrição do Requisito:** ${description}
+**Status da Auditoria:** ${status}`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: prompt,
+            contents: userPrompt,
+            config: {
+                systemInstruction: systemInstruction,
+            },
         });
         
         const observation = response.text.trim();
