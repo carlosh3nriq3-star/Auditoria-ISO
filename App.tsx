@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { SideNav } from './components/SideNav';
 import { AuditInfoForm } from './components/AuditInfoForm';
@@ -361,15 +362,15 @@ export default function App() {
       // FIX: Explicitly cast historyFilters properties to string to prevent type errors.
       // This handles cases where values from localStorage might be inferred as `unknown`,
       // which would cause errors in string operations and Date constructors.
-      const companyMatch = !historyFilters.company || audit.auditInfo.company.toLowerCase().includes(String(historyFilters.company).toLowerCase());
-      if (historyFilters.startDate && historyFilters.endDate && String(historyFilters.startDate) > String(historyFilters.endDate)) {
+      const companyMatch = !historyFilters.company || audit.auditInfo.company.toLowerCase().includes(historyFilters.company.toLowerCase());
+      if (historyFilters.startDate && historyFilters.endDate && historyFilters.startDate > historyFilters.endDate) {
         return false;
       }
       const dateParts = audit.completionDate.split('/');
       const date = new Date(+dateParts[2], +dateParts[1] - 1, +dateParts[0]);
       
-      const startDateMatch = !historyFilters.startDate || date >= new Date(String(historyFilters.startDate));
-      const endDateMatch = !historyFilters.endDate || date <= new Date(String(historyFilters.endDate));
+      const startDateMatch = !historyFilters.startDate || date >= new Date(historyFilters.startDate);
+      const endDateMatch = !historyFilters.endDate || date <= new Date(historyFilters.endDate);
 
       return companyMatch && startDateMatch && endDateMatch;
     });

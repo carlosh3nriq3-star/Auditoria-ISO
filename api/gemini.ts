@@ -1,3 +1,4 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
 import type { ChecklistItemData } from '../types';
@@ -54,6 +55,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 **Descrição do Requisito:** ${description}
 **Status da Auditoria:** ${status}`;
 
+        // FIX: Corrected the `contents` parameter to be a simple string for a single text prompt,
+        // as per the @google/genai SDK guidelines.
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userPrompt,
