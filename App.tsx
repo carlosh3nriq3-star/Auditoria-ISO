@@ -5,7 +5,6 @@ import { AuditInfoForm } from './components/AuditInfoForm';
 import { Checklist } from './components/Checklist';
 import { Dashboard } from './components/Dashboard';
 import { ReportGenerator } from './components/ReportGenerator';
-import { UserManagement } from './components/UserManagement';
 import { Header } from './components/Header';
 import { AuditHistory } from './components/AuditHistory';
 import { CompletedAuditView } from './components/CompletedAuditView';
@@ -22,7 +21,6 @@ const ALL_POSSIBLE_DEPARTMENTS = [
 export const ALL_ENVIRONMENTS = [
     'Dashboard',
     'Relatório',
-    'Usuários',
     'Histórico',
     ...ISO_STANDARDS.map(s => s.name)
 ];
@@ -189,27 +187,6 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleAddUser = (user: Omit<User, 'id'>) => {
-    const defaultPassword = 'password123';
-    const newUser = { ...user, id: `user-${Date.now()}`, password: defaultPassword };
-    setUsers(prevUsers => [...prevUsers, newUser]);
-    alert(`Usuário criado com sucesso.`);
-  };
-
-  const handleUpdateUser = (updatedUser: User) => {
-    setUsers(prevUsers => prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user));
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-  };
-
-  const handleResetUserPassword = (userId: string) => {
-    const defaultPass = '123456';
-    setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, password: defaultPass } : user));
-    alert(`A senha do usuário foi redefinida para: ${defaultPass}`);
-  };
-
   const handleChangeOwnSecurity = (newPassword?: string, question?: string, answer?: string) => {
     if (!currentUser) return;
     const updatedUser = { ...currentUser };
@@ -294,7 +271,6 @@ export default function App() {
     });
   }, [completedAudits, historyFilters]);
 
-  // If for some reason currentUser is lost, we force it (shouldn't happen with the new init)
   if (!currentUser) return null;
 
   const canPerformAudit = currentUser.permissions.includes('PERFORM_AUDIT');
@@ -311,7 +287,7 @@ export default function App() {
             currentUser={currentUser} setActiveView={setActiveView}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-8 pb-20 md:pb-8">
-            {activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'users' && activeView !== 'change-password' && !activeView.startsWith('history') && (
+            {activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'change-password' && !activeView.startsWith('history') && (
                 <AuditInfoForm auditInfo={auditInfo} setAuditInfo={setAuditInfo} />
             )}
             
@@ -336,15 +312,6 @@ export default function App() {
                 <ReportGenerator auditInfo={auditInfo} standards={accessibleStandards} />
             )}
 
-            {activeView === 'users' && currentUser.permissions.includes('MANAGE_USERS') && (
-                <UserManagement
-                    users={users} roles={roles} onAddUser={handleAddUser}
-                    onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
-                    onResetPassword={handleResetUserPassword}
-                    currentUser={currentUser} allEnvironments={ALL_ENVIRONMENTS}
-                />
-            )}
-            
             {activeView === 'history' && (
                 <AuditHistory 
                     audits={filteredCompletedAudits} onViewAudit={(id) => setActiveView(`history-${id}`)}
@@ -358,7 +325,7 @@ export default function App() {
                 <ChangePassword currentUser={currentUser} onSave={handleChangeOwnSecurity} onCancel={() => setActiveView('dashboard')} />
             )}
 
-            {!activeStandard && !['dashboard', 'report', 'users', 'history', 'change-password'].includes(activeView) && !completedAuditToView && (
+            {!activeStandard && !['dashboard', 'report', 'history', 'change-password'].includes(activeView) && !completedAuditToView && (
                  <div className="flex flex-col items-center justify-center h-full text-center text-slate-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mb-4 text-slate-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-4.5 0V6.375c0-.621.504-1.125 1.125-1.125h2.25M13.5 10.5H21M13.5 6H21" />

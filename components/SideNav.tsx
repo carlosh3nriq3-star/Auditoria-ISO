@@ -21,12 +21,6 @@ const DocumentTextIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const UsersIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-2.253 9.5 9.5 0 0 0-1.255-7.138 9.337 9.337 0 0 0-3.3-2.625 9.337 9.337 0 0 0-2.625-.372 9.337 9.337 0 0 0-4.121 2.253 9.5 9.5 0 0 0 1.255 7.138 9.337 9.337 0 0 0 3.3 2.625Zm-6.25 1.625a9.337 9.337 0 0 1-4.121-2.253 9.5 9.5 0 0 1 1.255-7.138 9.337 9.337 0 0 1 3.3-2.625 9.337 9.337 0 0 1 2.625-.372 9.337 9.337 0 0 1 4.121 2.253 9.5 9.5 0 0 1-1.255 7.138 9.337 9.337 0 0 1-3.3 2.625 9.337 9.337 0 0 1-2.625.372Zm-6.25-1.625a9.337 9.337 0 0 1-4.121-2.253 9.5 9.5 0 0 1 1.255-7.138 9.337 9.337 0 0 1 3.3-2.625 9.337 9.337 0 0 1 2.625-.372 9.337 9.337 0 0 1 4.121 2.253 9.5 9.5 0 0 1-1.255 7.138 9.337 9.337 0 0 1-3.3 2.625 9.337 9.337 0 0 1-2.625.372Z" />
-    </svg>
-);
-
 const ArchiveBoxIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
@@ -44,7 +38,6 @@ const ListBulletIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
     </svg>
 );
-
 
 export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActiveView, currentUser }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -86,12 +79,6 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                         <button onClick={() => setActiveView('history')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView.startsWith('history') ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
                             <ArchiveBoxIcon className="w-6 h-6" />
                             <span className="font-medium">Histórico</span>
-                        </button>
-                    )}
-                    {currentUser?.allowedDepartments.includes('Usuários') && (
-                        <button onClick={() => setActiveView('users')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'users' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
-                            <UsersIcon className="w-6 h-6" />
-                            <span className="font-medium">Usuários</span>
                         </button>
                     )}
                     <div className="pt-2">
@@ -158,7 +145,7 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
             </nav>
 
             {isMobileMenuOpen && (
-                <div className="md:hidden fixed inset-0 bg-black/60 z-[100] flex items-end justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                <div className="md:hidden inset-0 fixed bg-black/60 z-[100] flex items-end justify-center" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="bg-slate-900 rounded-t-2xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-slate-700 flex justify-between items-center">
                             <h3 className="text-lg font-semibold text-white">Selecionar Norma</h3>

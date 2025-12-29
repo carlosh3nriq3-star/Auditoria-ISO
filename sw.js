@@ -22,7 +22,6 @@ const urlsToCache = [
   '/components/RecentNonConformities.tsx',
   '/components/ReportGenerator.tsx',
   '/components/RequirementsChart.tsx',
-  '/components/UserManagement.tsx',
   '/components/Login.tsx',
   '/components/ActionPlanManagement.tsx',
   '/components/LandingPage.tsx',
@@ -60,7 +59,6 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event: serves assets from cache or network.
-// Strategy: Network falling back to cache. Updates cache on successful network response.
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') {
         return;
@@ -69,18 +67,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request)
         .then((response) => {
-            // Check if we received a valid response
             if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
                 return response;
             }
 
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
             const responseToCache = response.clone();
             
-            // Do not cache calls to the Gemini API
             if (!event.request.url.includes('generativelanguage.googleapis.com')) {
                 caches.open(CACHE_NAME).then((cache) => {
                     cache.put(event.request, responseToCache);
@@ -90,13 +82,10 @@ self.addEventListener('fetch', (event) => {
             return response;
         })
         .catch(() => {
-            // Network request failed, try to get it from the cache.
             return caches.match(event.request).then((response) => {
                 if (response) {
                     return response;
                 }
-                // If not in cache, the request will fail.
-                // You could return a custom offline page here if you had one.
             });
         })
     );
