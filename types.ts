@@ -1,3 +1,4 @@
+
 import type { FC, SVGProps } from 'react';
 
 export enum Status {
@@ -56,6 +57,8 @@ export interface User {
   roleId: string;
   password?: string;
   allowedDepartments: string[];
+  securityQuestion?: string;
+  securityAnswer?: string;
 }
 
 export interface AuthenticatedUser extends User {

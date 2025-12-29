@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import type { IsoStandard, AuthenticatedUser } from '../types';
 
 interface SideNavProps {
@@ -6,7 +7,6 @@ interface SideNavProps {
     activeView: string;
     setActiveView: (id: string) => void;
     currentUser: AuthenticatedUser | null;
-    onLogout: () => void;
 }
 
 const HomeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -33,10 +33,9 @@ const ArchiveBoxIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-
-const LogoutIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+const KeyIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
     </svg>
 );
 
@@ -47,185 +46,132 @@ const ListBulletIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 );
 
 
-export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActiveView, currentUser, onLogout }) => {
+export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActiveView, currentUser }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const isNormasActive = standards.some(s => s.id === activeView);
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <>
-            {/* Desktop Sidebar */}
             <nav className="hidden md:flex flex-col w-64 bg-slate-900 text-white flex-shrink-0">
                 <div className="p-6 border-b border-slate-700">
-                    <h1 className="text-2xl font-bold">Auditoria Interna ISO</h1>
+                    <h1 className="text-2xl font-bold">Auditoria ISO</h1>
                     <p className="text-sm text-slate-400">Assistente Interno</p>
                 </div>
                 <div className="flex-1 p-4 space-y-2 overflow-y-auto">
                     {currentUser?.allowedDepartments.includes('Dashboard') && (
-                        <button
-                            onClick={() => setActiveView('dashboard')}
-                            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                                activeView === 'dashboard'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                            }`}
-                        >
-                            <HomeIcon className="w-6 h-6 flex-shrink-0" />
+                        <button onClick={() => setActiveView('dashboard')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'dashboard' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                            <HomeIcon className="w-6 h-6" />
                             <span className="font-medium">Dashboard</span>
                         </button>
                     )}
-                    
                     {currentUser?.allowedDepartments.includes('Relatório') && (
-                        <button
-                            onClick={() => setActiveView('report')}
-                            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                                activeView === 'report'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                            }`}
-                        >
-                            <DocumentTextIcon className="w-6 h-6 flex-shrink-0" />
+                        <button onClick={() => setActiveView('report')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'report' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                            <DocumentTextIcon className="w-6 h-6" />
                             <span className="font-medium">Relatório</span>
                         </button>
                     )}
-
                     {currentUser?.allowedDepartments.includes('Histórico') && (
-                        <button
-                            onClick={() => setActiveView('history')}
-                            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                                activeView.startsWith('history')
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                            }`}
-                        >
-                            <ArchiveBoxIcon className="w-6 h-6 flex-shrink-0" />
+                        <button onClick={() => setActiveView('history')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView.startsWith('history') ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                            <ArchiveBoxIcon className="w-6 h-6" />
                             <span className="font-medium">Histórico</span>
                         </button>
                     )}
-
                     {currentUser?.allowedDepartments.includes('Usuários') && (
-                        <button
-                            onClick={() => setActiveView('users')}
-                            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                                activeView === 'users'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                            }`}
-                        >
-                            <UsersIcon className="w-6 h-6 flex-shrink-0" />
+                        <button onClick={() => setActiveView('users')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'users' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                            <UsersIcon className="w-6 h-6" />
                             <span className="font-medium">Usuários</span>
                         </button>
                     )}
-
                     <div className="pt-2">
                         <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Normas</h3>
-                        <div className="mt-2 space-y-2">
-                            {standards.length > 0 ? (
-                                standards.map((standard) => {
-                                    const Icon = standard.icon;
-                                    return (
-                                        <button
-                                            key={standard.id}
-                                            onClick={() => setActiveView(standard.id)}
-                                            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                                                activeView === standard.id
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                            }`}
-                                        >
-                                            {Icon && <Icon className="w-6 h-6 flex-shrink-0" />}
-                                            <span className="font-medium">{standard.name}</span>
-                                        </button>
-                                    );
-                                })
-                            ) : (
-                                <p className="px-3 text-sm text-slate-400 italic">Nenhuma norma atribuída.</p>
-                            )}
+                        <div className="mt-2 space-y-1">
+                            {standards.map((standard) => {
+                                const Icon = standard.icon;
+                                return (
+                                    <button key={standard.id} onClick={() => setActiveView(standard.id)} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === standard.id ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                                        {Icon && <Icon className="w-5 h-5" />}
+                                        <span className="text-sm font-medium">{standard.name}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
-                <div className="p-4 border-t border-slate-700">
-                    <div className="flex items-center gap-3">
+                <div className="p-4 border-t border-slate-700 relative" ref={profileRef}>
+                    <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="w-full flex items-center gap-3 p-2 hover:bg-slate-800 rounded-lg transition text-left">
                         <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white">
                             {currentUser?.name.charAt(0)}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 overflow-hidden">
                             <p className="font-semibold text-white truncate">{currentUser?.name}</p>
                             <p className="text-xs text-slate-400">{currentUser?.roleName}</p>
                         </div>
-                         <button onClick={onLogout} className="text-slate-400 hover:text-white transition-colors" aria-label="Sair">
-                            <LogoutIcon className="w-6 h-6"/>
-                        </button>
-                    </div>
+                    </button>
+                    {isProfileOpen && (
+                        <div className="absolute bottom-20 left-4 right-4 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2">
+                             <button onClick={() => { setIsProfileOpen(false); setActiveView('change-password'); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition">
+                                <KeyIcon className="w-5 h-5 text-slate-400" />
+                                <span>Configurações</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </nav>
 
-            {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 text-white border-t border-slate-700 z-50">
                 <div className="flex justify-around items-center h-16">
                     {currentUser?.allowedDepartments.includes('Dashboard') && (
-                        <button onClick={() => setActiveView('dashboard')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'dashboard' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Dashboard">
+                        <button onClick={() => setActiveView('dashboard')} className={`flex flex-col items-center justify-center flex-1 ${activeView === 'dashboard' ? 'text-blue-400' : 'text-slate-400'}`}>
                             <HomeIcon className="w-6 h-6" />
-                            <span className="text-xs mt-1 truncate">Dashboard</span>
+                            <span className="text-[10px] mt-1">Dashboard</span>
                         </button>
                     )}
-                     <button onClick={() => setIsMobileMenuOpen(true)} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${isNormasActive ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Normas">
+                    <button onClick={() => setIsMobileMenuOpen(true)} className={`flex flex-col items-center justify-center flex-1 ${isNormasActive ? 'text-blue-400' : 'text-slate-400'}`}>
                         <ListBulletIcon className="w-6 h-6" />
-                        <span className="text-xs mt-1 truncate">Normas</span>
+                        <span className="text-[10px] mt-1">Normas</span>
                     </button>
                     {currentUser?.allowedDepartments.includes('Histórico') && (
-                        <button onClick={() => setActiveView('history')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView.startsWith('history') ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Histórico">
+                        <button onClick={() => setActiveView('history')} className={`flex flex-col items-center justify-center flex-1 ${activeView.startsWith('history') ? 'text-blue-400' : 'text-slate-400'}`}>
                             <ArchiveBoxIcon className="w-6 h-6" />
-                            <span className="text-xs mt-1 truncate">Histórico</span>
+                            <span className="text-[10px] mt-1">Histórico</span>
                         </button>
                     )}
-                     {currentUser?.allowedDepartments.includes('Usuários') && (
-                        <button onClick={() => setActiveView('users')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'users' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Usuários">
-                            <UsersIcon className="w-6 h-6" />
-                            <span className="text-xs mt-1 truncate">Usuários</span>
-                        </button>
-                     )}
-                    {currentUser?.allowedDepartments.includes('Relatório') && (
-                        <button onClick={() => setActiveView('report')} className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-200 flex-1 ${activeView === 'report' ? 'text-blue-400' : 'text-slate-400'}`} aria-label="Relatório">
-                            <DocumentTextIcon className="w-6 h-6" />
-                            <span className="text-xs mt-1 truncate">Relatório</span>
-                        </button>
-                    )}
+                    <button onClick={() => setIsProfileOpen(!isProfileOpen)} className={`flex flex-col items-center justify-center flex-1 ${activeView === 'change-password' ? 'text-blue-400' : 'text-slate-400'}`}>
+                        <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold">
+                            {currentUser?.name.charAt(0)}
+                        </div>
+                        <span className="text-[10px] mt-1">Perfil</span>
+                    </button>
                 </div>
             </nav>
 
-            {/* Mobile Standards Modal */}
             {isMobileMenuOpen && (
                 <div className="md:hidden fixed inset-0 bg-black/60 z-[100] flex items-end justify-center" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="bg-slate-900 rounded-t-2xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-slate-700 flex justify-between items-center">
                             <h3 className="text-lg font-semibold text-white">Selecionar Norma</h3>
                             <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div className="p-4 space-y-2">
-                            {standards.map((standard) => {
-                                const Icon = standard.icon;
-                                return (
-                                    <button
-                                        key={standard.id}
-                                        onClick={() => {
-                                            setActiveView(standard.id);
-                                            setIsMobileMenuOpen(false);
-                                        }}
-                                        className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 ${
-                                            activeView === standard.id
-                                                ? 'bg-blue-600 text-white'
-                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                        }`}
-                                    >
-                                        {Icon && <Icon className="w-6 h-6 flex-shrink-0" />}
-                                        <span className="font-medium">{standard.name}</span>
-                                    </button>
-                                );
-                            })}
+                        <div className="p-4 space-y-1">
+                            {standards.map((standard) => (
+                                <button key={standard.id} onClick={() => { setActiveView(standard.id); setIsMobileMenuOpen(false); }} className={`w-full flex items-center space-x-3 p-4 rounded-xl text-left ${activeView === standard.id ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
+                                    <span className="font-medium">{standard.name}</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>

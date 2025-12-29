@@ -62,6 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             contents: userPrompt,
             config: {
                 systemInstruction: systemInstruction,
+                thinkingConfig: { thinkingBudget: 0 },
             },
         });
         
