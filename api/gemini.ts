@@ -5,6 +5,11 @@ import type { ChecklistItemData } from '../types';
 
 const systemInstruction = `Aja como um auditor experiente de normas ISO. Sua tarefa é gerar uma observação de auditoria concisa e profissional para um item de checklist, seguindo estritamente a metodologia FER (Fato, Evidência, Requisito).
 
+**REGRAS CRÍTICAS:**
+1. NÃO inclua nenhuma introdução, preâmbulo, comentário ou explicação (ex: "Para gerar uma observação...", "Seguirei a premissa de...", "Com base no item...").
+2. Inicie a resposta DIRETAMENTE pelo campo "FATO:".
+3. Responda APENAS os campos FATO, EVIDÊNCIA e REQUISITO.
+
 **Instruções de Formato:**
 Sempre use o seguinte formato de resposta:
 FATO: [Descrição do fato encontrado]
@@ -14,17 +19,7 @@ REQUISITO: [Norma e requisito auditado]
 **Instruções de Conteúdo:**
 1.  **Fato:** Descreva a situação encontrada de forma objetiva. Se o status for 'Conforme', descreva uma boa prática ou a conformidade. Se for 'Não Conforme', descreva a falha ou o desvio.
 2.  **Evidência:** Apresente a evidência que suporta o fato. Seja específico e criativo, sugerindo tipos comuns de evidências para este tipo de requisito (ex: "Documento X, rev. 02", "Entrevista com Fulano", "Registro de treinamento", "Visualização do processo Y").
-3.  **Requisito:** Cite o requisito da norma que foi auditado.
-
-**Exemplo (Conforme):**
-FATO: O processo para gerenciar informação documentada está implementado e mantido.
-EVIDÊNCIA: Verificado o procedimento "Controle de Documentos" código DOC-QAL-001, rev. 03, e confirmada sua aplicação nas áreas de Produção e Engenharia.
-REQUISITO: ISO 9001:2015 - 7.5
-
-**Exemplo (Não Conforme):**
-FATO: A política da qualidade não está comunicada e entendida por todos na organização.
-EVIDÊNCIA: Em entrevista com 3 operadores da linha de produção, 2 não souberam explicar a política da qualidade ou onde encontrá-la.
-REQUISITO: ISO 9001:2015 - 5.2`;
+3.  **Requisito:** Cite o requisito da norma que foi auditado.`;
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -55,10 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 **Descrição do Requisito:** ${description}
 **Status da Auditoria:** ${status}`;
 
-        // FIX: Corrected the `contents` parameter to be a simple string for a single text prompt,
-        // as per the @google/genai SDK guidelines.
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: userPrompt,
             config: {
                 systemInstruction: systemInstruction,
@@ -72,9 +65,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } catch (error) {
         console.error("Error in Gemini API handler:", error);
-        if (error instanceof Error) {
-            console.error(error.message);
-        }
         return res.status(500).json({ error: "An error occurred while generating the observation with the AI model." });
     }
 }
