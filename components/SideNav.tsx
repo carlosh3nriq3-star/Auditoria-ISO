@@ -100,7 +100,7 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                             <span className="font-medium">Histórico</span>
                         </button>
                     )}
-                    {currentUser?.allowedDepartments.includes('Usuários') && (
+                    {currentUser?.permissions.includes('MANAGE_USERS') && (
                         <button onClick={() => { setActiveView('users'); setIsOpen(false); }} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'users' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
                             <UsersIcon className="w-6 h-6" />
                             <span className="font-medium">Usuários</span>

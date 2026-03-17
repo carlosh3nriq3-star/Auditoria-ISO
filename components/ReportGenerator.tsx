@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import type { AuditInfo, IsoStandard, ChecklistItemData } from '../types';
+import type { AuditInfo, IsoStandard } from '../types';
 import { Status } from '../types';
 
 interface ReportGeneratorProps {

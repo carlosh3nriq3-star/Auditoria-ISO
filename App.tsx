@@ -10,19 +10,15 @@ import { Header } from './components/Header';
 import { AuditHistory } from './components/AuditHistory';
 import { CompletedAuditView } from './components/CompletedAuditView';
 import { ChangePassword } from './components/ChangePassword';
-import type { AuditInfo, IsoStandard, ChecklistItemData, User, Role, AuthenticatedUser, Permission, CompletedAudit } from './types';
+import type { AuditInfo, IsoStandard, ChecklistItemData, User, Role, AuthenticatedUser, CompletedAudit } from './types';
 import { Status } from './types';
 import { ISO_STANDARDS } from './constants';
 import { generateObservation } from './services/geminiService';
-
-const ALL_POSSIBLE_DEPARTMENTS = [
-    ...new Set(ISO_STANDARDS.flatMap(s => s.items.map(item => item.department)))
-].sort();
+import { dbService } from './services/dbService';
 
 export const ALL_ENVIRONMENTS = [
     'Dashboard',
     'Relatório',
-    'Usuários',
     'Histórico',
     ...ISO_STANDARDS.map(s => s.name)
 ];
@@ -31,10 +27,6 @@ const INITIAL_ROLES: Role[] = [
     { id: 'role-admin', name: 'Admin', permissions: ['VIEW_DASHBOARD', 'PERFORM_AUDIT', 'GENERATE_REPORTS', 'MANAGE_USERS'] },
     { id: 'role-lead', name: 'Auditor Líder', permissions: ['VIEW_DASHBOARD', 'PERFORM_AUDIT', 'GENERATE_REPORTS'] },
     { id: 'role-auditor', name: 'Auditor', permissions: ['VIEW_DASHBOARD', 'PERFORM_AUDIT'] },
-];
-
-const INITIAL_USERS: User[] = [
-    { id: 'user-3', name: 'Administrador do Sistema', email: 'admin@audit.com', password: '123', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS, securityQuestion: 'Pergunta Padrão', securityAnswer: 'Resposta' },
 ];
 
 function usePersistentState<T>(key: string, initialValue: T | (() => T)): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -62,7 +54,8 @@ function usePersistentState<T>(key: string, initialValue: T | (() => T)): [T, Re
 }
 
 export default function App() {
-  const [auditInfo, setAuditInfo] = usePersistentState<AuditInfo>('auditInfo', {
+  const [isLoading, setIsLoading] = useState(true);
+  const [auditInfo, setAuditInfo] = useState<AuditInfo>({
     company: 'Empresa Exemplo S.A.',
     department: 'Produção',
     leadAuditor: 'João Silva',
@@ -71,43 +64,34 @@ export default function App() {
     auditDate: new Date().toLocaleDateString('pt-BR'),
   });
 
-  const [standards, setStandards] = usePersistentState<IsoStandard[]>('standards', () => JSON.parse(JSON.stringify(ISO_STANDARDS)));
-  const [users, setUsers] = usePersistentState<User[]>('users', INITIAL_USERS);
+  const [standards, setStandards] = useState<IsoStandard[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   
-  useEffect(() => {
-    setStandards(prev => {
-      let changed = false;
-      const defaultStandards = JSON.parse(JSON.stringify(ISO_STANDARDS));
-      const newStandards = defaultStandards.map((ds: IsoStandard) => {
-        const existing = prev.find((p: IsoStandard) => p.id === ds.id);
-        if (!existing) {
-          changed = true;
-          return ds;
-        }
-        return existing;
-      });
-      return changed ? newStandards : prev;
-    });
-  }, [setStandards]);
   const roles: Role[] = INITIAL_ROLES;
   const [activeView, setActiveView] = usePersistentState<string>('activeView', 'dashboard');
   const [dashboardFilter, setDashboardFilter] = usePersistentState<string>('dashboardFilter', 'all');
   const [departmentFilter, setDepartmentFilter] = usePersistentState<string>('departmentFilter', 'all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
   
-  // Auto-login as Admin
-  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(() => {
-      const admin = INITIAL_USERS[0];
-      const role = INITIAL_ROLES.find(r => r.id === admin.roleId);
-      return {
-          ...admin,
-          permissions: role?.permissions || [],
-          roleName: role?.name || 'Admin',
-      };
-  });
+  const [currentUser, setCurrentUser] = usePersistentState<AuthenticatedUser | null>('currentUser', null);
+
+  // Auto-login the first user (admin) if no user is logged in
+  useEffect(() => {
+    if (!isLoading && !currentUser && users.length > 0) {
+      const adminUser = users[0];
+      const adminRole = roles.find(r => r.id === adminUser.roleId);
+      if (adminRole) {
+        setCurrentUser({
+          ...adminUser,
+          permissions: adminRole.permissions,
+          roleName: adminRole.name
+        });
+      }
+    }
+  }, [isLoading, currentUser, users, roles, setCurrentUser]);
 
   const [generatingItems, setGeneratingItems] = useState<Set<string>>(new Set());
-  const [completedAudits, setCompletedAudits] = usePersistentState<CompletedAudit[]>('completedAudits', []);
+  const [completedAudits, setCompletedAudits] = useState<CompletedAudit[]>([]);
   const [historyFilters, setHistoryFilters] = usePersistentState<{
     company: string;
     startDate: string;
@@ -118,14 +102,71 @@ export default function App() {
     endDate: '',
   });
 
+  const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  useEffect(() => {
+    async function loadData() {
+      if (!isSupabaseConfigured) {
+        // Fallback to local data for preview
+        setUsers([{ id: 'user-admin', name: 'Admin', email: 'admin@admin.com', password: 'admin', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS }]);
+        setStandards(JSON.parse(JSON.stringify(ISO_STANDARDS)));
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const [fetchedUsers, fetchedAuditInfo, fetchedStandards, fetchedCompleted] = await Promise.all([
+          dbService.getUsers(),
+          dbService.getAuditInfo(),
+          dbService.getStandards(),
+          dbService.getCompletedAudits()
+        ]);
+        if (fetchedUsers.length > 0) {
+          setUsers(fetchedUsers);
+        } else {
+          // If DB is empty, provide a default admin user
+          setUsers([{ id: 'user-admin', name: 'Admin', email: 'admin@admin.com', password: 'admin', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS }]);
+        }
+        if (fetchedAuditInfo) setAuditInfo(fetchedAuditInfo);
+        if (fetchedStandards.length > 0) {
+          setStandards(fetchedStandards);
+        } else {
+          setStandards(JSON.parse(JSON.stringify(ISO_STANDARDS)));
+        }
+        if (fetchedCompleted.length > 0) setCompletedAudits(fetchedCompleted);
+      } catch (error) {
+        console.error("Error loading data from Supabase:", error);
+        // Fallback on error
+        setUsers([{ id: 'user-admin', name: 'Admin', email: 'admin@admin.com', password: 'admin', roleId: 'role-admin', allowedDepartments: ALL_ENVIRONMENTS }]);
+        setStandards(JSON.parse(JSON.stringify(ISO_STANDARDS)));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && isSupabaseConfigured) {
+      const timer = setTimeout(() => {
+        dbService.updateAuditInfo(auditInfo);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [auditInfo, isLoading, isSupabaseConfigured]);
+
   const updateItemInStandards = (itemId: string, standardId: string, updates: Partial<ChecklistItemData>) => {
-    setStandards(prevStandards => 
-      prevStandards.map(s => 
+    setStandards(prevStandards => {
+      const newStandards = prevStandards.map(s => 
         s.id === standardId
           ? { ...s, items: s.items.map(i => i.id === itemId ? { ...i, ...updates } : i) }
           : s
-      )
-    );
+      );
+      const updatedStandard = newStandards.find(s => s.id === standardId);
+      if (updatedStandard) {
+         dbService.updateStandard(updatedStandard);
+      }
+      return newStandards;
+    });
   };
 
   const accessibleStandards = useMemo(() => {
@@ -194,28 +235,36 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleAddUser = (user: Omit<User, 'id'>) => {
+  const handleAddUser = async (user: Omit<User, 'id'>) => {
     const defaultPassword = 'password123';
     const newUser = { ...user, id: `user-${Date.now()}`, password: defaultPassword };
     setUsers(prevUsers => [...prevUsers, newUser]);
+    await dbService.addUser(newUser);
     alert(`Usuário criado com sucesso.`);
   };
 
-  const handleUpdateUser = (updatedUser: User) => {
+  const handleUpdateUser = async (updatedUser: User) => {
     setUsers(prevUsers => prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user));
+    await dbService.updateUser(updatedUser);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+    await dbService.deleteUser(userId);
   };
 
-  const handleResetUserPassword = (userId: string) => {
+  const handleResetUserPassword = async (userId: string) => {
     const defaultPass = '123456';
-    setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, password: defaultPass } : user));
-    alert(`A senha do usuário foi redefinida para: ${defaultPass}`);
+    const updatedUser = users.find(u => u.id === userId);
+    if (updatedUser) {
+        const userToUpdate = { ...updatedUser, password: defaultPass };
+        setUsers(prevUsers => prevUsers.map(user => user.id === userId ? userToUpdate : user));
+        await dbService.updateUser(userToUpdate);
+        alert(`A senha do usuário foi redefinida para: ${defaultPass}`);
+    }
   };
 
-  const handleChangeOwnSecurity = (newPassword?: string, question?: string, answer?: string) => {
+  const handleChangeOwnSecurity = async (newPassword?: string, question?: string, answer?: string) => {
     if (!currentUser) return;
     const updatedUser = { ...currentUser };
     if (newPassword) updatedUser.password = newPassword;
@@ -223,6 +272,9 @@ export default function App() {
     if (answer) updatedUser.securityAnswer = answer;
     
     setCurrentUser(updatedUser);
+    setUsers(prevUsers => prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user));
+    await dbService.updateUser(updatedUser);
+
     alert('Configurações atualizadas!');
     setActiveView('dashboard');
   };
@@ -267,22 +319,30 @@ export default function App() {
   const activeStandard = useMemo(() => standards.find(s => s.id === activeView), [standards, activeView]);
   const completedAuditToView = useMemo(() => completedAudits.find(a => `history-${a.id}` === activeView), [completedAudits, activeView]);
 
-  const handleFinishAudit = () => {
+  const handleFinishAudit = async () => {
     if (window.confirm('Tem certeza que deseja finalizar e arquivar esta auditoria?')) {
         const allItems = standards.flatMap(s => s.items);
         const auditableItems = allItems.filter(i => i.status === Status.Conforme || i.status === Status.NaoConforme);
         const compliancePercentage = auditableItems.length > 0 ? (auditableItems.filter(i => i.status === Status.Conforme).length / auditableItems.length) * 100 : 0;
 
-        setCompletedAudits(prev => [...prev, {
+        const newAudit = {
             id: Date.now().toString(),
             completionDate: new Date().toLocaleDateString('pt-BR'),
             auditInfo: { ...auditInfo },
             standards: JSON.parse(JSON.stringify(standards)),
             summary: { compliancePercentage, nonCompliantCount: auditableItems.filter(i => i.status === Status.NaoConforme).length }
-        }]);
+        };
+
+        setCompletedAudits(prev => [...prev, newAudit]);
+        await dbService.addCompletedAudit(newAudit);
         
-        setStandards(JSON.parse(JSON.stringify(ISO_STANDARDS)));
-        setAuditInfo({ company: 'Empresa Exemplo S.A.', department: 'Produção', leadAuditor: currentUser?.name || '', internalAuditors: '', auditees: '', auditDate: new Date().toLocaleDateString('pt-BR') });
+        const resetStds = await dbService.resetStandards();
+        setStandards(resetStds);
+
+        const resetInfo = { company: 'Empresa Exemplo S.A.', department: 'Produção', leadAuditor: currentUser?.name || '', internalAuditors: '', auditees: '', auditDate: new Date().toLocaleDateString('pt-BR') };
+        setAuditInfo(resetInfo);
+        await dbService.updateAuditInfo(resetInfo);
+
         setActiveView('dashboard');
         alert('Auditoria arquivada com sucesso!');
     }
@@ -299,7 +359,32 @@ export default function App() {
     });
   }, [completedAudits, historyFilters]);
 
-  if (!currentUser) return null;
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setActiveView('dashboard');
+  };
+
+  if (isLoading) {
+      return (
+          <div className="flex items-center justify-center min-h-screen bg-slate-100">
+              <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600 font-medium">Carregando...</p>
+              </div>
+          </div>
+      );
+  }
+
+  if (!currentUser) {
+      return (
+          <div className="flex items-center justify-center min-h-screen bg-slate-100">
+              <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600 font-medium">Autenticando...</p>
+              </div>
+          </div>
+      );
+  }
 
   const canPerformAudit = currentUser.permissions.includes('PERFORM_AUDIT');
 
@@ -312,7 +397,7 @@ export default function App() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
             title={activeStandard?.name || (completedAuditToView ? "Detalhes da Auditoria" : activeView === 'change-password' ? 'Configurações' : activeView.charAt(0).toUpperCase() + activeView.slice(1))}
-            currentUser={currentUser} setActiveView={setActiveView} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            currentUser={currentUser} setActiveView={setActiveView} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} onLogout={handleLogout}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-8 pb-20 md:pb-8">
             {activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'users' && activeView !== 'change-password' && !activeView.startsWith('history') && (

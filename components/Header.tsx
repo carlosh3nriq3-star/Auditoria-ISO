@@ -7,6 +7,7 @@ interface HeaderProps {
     currentUser: AuthenticatedUser | null;
     setActiveView: (view: string) => void;
     toggleSidebar: () => void;
+    onLogout: () => void;
 }
 
 const KeyIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -15,13 +16,19 @@ const KeyIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const ArrowRightOnRectangleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+  </svg>
+);
+
 const Bars3Icon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
     </svg>
 );
 
-export const Header: React.FC<HeaderProps> = ({ title, currentUser, setActiveView, toggleSidebar }) => {
+export const Header: React.FC<HeaderProps> = ({ title, currentUser, setActiveView, toggleSidebar, onLogout }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +74,16 @@ export const Header: React.FC<HeaderProps> = ({ title, currentUser, setActiveVie
                             >
                                 <KeyIcon className="w-5 h-5 text-slate-500" />
                                 <span>Configurações</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    onLogout();
+                                }}
+                                className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                                <ArrowRightOnRectangleIcon className="w-5 h-5 text-red-500" />
+                                <span>Sair</span>
                             </button>
                         </div>
                     </div>

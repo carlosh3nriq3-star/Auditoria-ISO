@@ -1,7 +1,6 @@
 import React from 'react';
 import type { CompletedAudit } from '../types';
 import { Checklist } from './Checklist';
-import { Status } from '../types';
 
 interface CompletedAuditViewProps {
   audit: CompletedAudit;
@@ -13,13 +12,6 @@ const BackArrowIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
     </svg>
 );
-
-const statusColors: { [key in Status]: { text: string; bg: string; } } = {
-  [Status.Conforme]: { text: 'text-green-800', bg: 'bg-green-100' },
-  [Status.NaoConforme]: { text: 'text-red-800', bg: 'bg-red-100' },
-  [Status.NaoAplicavel]: { text: 'text-yellow-800', bg: 'bg-yellow-100' },
-  [Status.NaoAuditado]: { text: 'text-slate-600', bg: 'bg-slate-200' },
-};
 
 export const CompletedAuditView: React.FC<CompletedAuditViewProps> = ({ audit, onBack }) => {
 

@@ -26,7 +26,7 @@ const statusColors: { [key in Status]?: string } = {
   [Status.NaoAplicavel]: '#eab308', // yellow-500
 };
 
-const statusOrder: Status[] = [Status.Conforme, Status.NaoConforme, Status.NaoAplicavel];
+const statusOrder = [Status.Conforme, Status.NaoConforme, Status.NaoAplicavel] as const;
 
 export const RequirementsChart: React.FC<RequirementsChartProps> = ({ data }) => {
   const [tooltip, setTooltip] = useState<TooltipData>({ visible: false, content: '', x: 0, y: 0 });
