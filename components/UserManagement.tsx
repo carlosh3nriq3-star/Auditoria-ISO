@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { User, Role, AuthenticatedUser } from '../types';
 
@@ -103,13 +102,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, roles, on
     const roleMap = new Map(roles.map(role => [role.id, role.name]));
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Gerenciamento de Usuários</h1>
                 <p className="text-sm text-slate-500 mt-1">Configure usuários e permissões de acesso.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <h2 className="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-6">
                     {isEditing ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
                 </h2>
@@ -146,7 +145,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, roles, on
                 </form>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <h2 className="text-xl font-semibold text-slate-800 p-6">Usuários Registrados</h2>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200">

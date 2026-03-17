@@ -48,7 +48,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, error, onForgotPassword }
                     </button>
 
                     <div className="text-center text-[10px] text-slate-400 pt-4 border-t border-slate-100">
-                        <p>Dica: Administradores podem gerenciar senhas no painel de Usuários.</p>
+                        <p>Dica: Administradores podem redefinir senhas se necessário.</p>
                     </div>
                 </form>
             </div>

@@ -29,6 +29,7 @@ const urlsToCache = [
   '/components/RoleManagement.tsx',
   '/components/AuditHistory.tsx',
   '/components/CompletedAuditView.tsx',
+  '/components/UserManagement.tsx',
 ];
 
 // Install event: pre-caches the app shell.

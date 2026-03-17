@@ -5,6 +5,7 @@ import { AuditInfoForm } from './components/AuditInfoForm';
 import { Checklist } from './components/Checklist';
 import { Dashboard } from './components/Dashboard';
 import { ReportGenerator } from './components/ReportGenerator';
+import { UserManagement } from './components/UserManagement';
 import { Header } from './components/Header';
 import { AuditHistory } from './components/AuditHistory';
 import { CompletedAuditView } from './components/CompletedAuditView';
@@ -21,6 +22,7 @@ const ALL_POSSIBLE_DEPARTMENTS = [
 export const ALL_ENVIRONMENTS = [
     'Dashboard',
     'Relatório',
+    'Usuários',
     'Histórico',
     ...ISO_STANDARDS.map(s => s.name)
 ];
@@ -71,10 +73,27 @@ export default function App() {
 
   const [standards, setStandards] = usePersistentState<IsoStandard[]>('standards', () => JSON.parse(JSON.stringify(ISO_STANDARDS)));
   const [users, setUsers] = usePersistentState<User[]>('users', INITIAL_USERS);
+  
+  useEffect(() => {
+    setStandards(prev => {
+      let changed = false;
+      const defaultStandards = JSON.parse(JSON.stringify(ISO_STANDARDS));
+      const newStandards = defaultStandards.map((ds: IsoStandard) => {
+        const existing = prev.find((p: IsoStandard) => p.id === ds.id);
+        if (!existing) {
+          changed = true;
+          return ds;
+        }
+        return existing;
+      });
+      return changed ? newStandards : prev;
+    });
+  }, [setStandards]);
   const roles: Role[] = INITIAL_ROLES;
   const [activeView, setActiveView] = usePersistentState<string>('activeView', 'dashboard');
   const [dashboardFilter, setDashboardFilter] = usePersistentState<string>('dashboardFilter', 'all');
   const [departmentFilter, setDepartmentFilter] = usePersistentState<string>('departmentFilter', 'all');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
   
   // Auto-login as Admin
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(() => {
@@ -98,18 +117,6 @@ export default function App() {
     startDate: '',
     endDate: '',
   });
-
-  const handleUpdateUserInList = (updatedUser: User) => {
-    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-    if (currentUser?.id === updatedUser.id) {
-       const role = roles.find(r => r.id === updatedUser.roleId);
-       setCurrentUser({
-           ...updatedUser,
-           permissions: role?.permissions || [],
-           roleName: role?.name || '',
-       });
-    }
-  };
 
   const updateItemInStandards = (itemId: string, standardId: string, updates: Partial<ChecklistItemData>) => {
     setStandards(prevStandards => 
@@ -187,6 +194,27 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
+  const handleAddUser = (user: Omit<User, 'id'>) => {
+    const defaultPassword = 'password123';
+    const newUser = { ...user, id: `user-${Date.now()}`, password: defaultPassword };
+    setUsers(prevUsers => [...prevUsers, newUser]);
+    alert(`Usuário criado com sucesso.`);
+  };
+
+  const handleUpdateUser = (updatedUser: User) => {
+    setUsers(prevUsers => prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user));
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+  };
+
+  const handleResetUserPassword = (userId: string) => {
+    const defaultPass = '123456';
+    setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, password: defaultPass } : user));
+    alert(`A senha do usuário foi redefinida para: ${defaultPass}`);
+  };
+
   const handleChangeOwnSecurity = (newPassword?: string, question?: string, answer?: string) => {
     if (!currentUser) return;
     const updatedUser = { ...currentUser };
@@ -194,7 +222,7 @@ export default function App() {
     if (question) updatedUser.securityQuestion = question;
     if (answer) updatedUser.securityAnswer = answer;
     
-    handleUpdateUserInList(updatedUser);
+    setCurrentUser(updatedUser);
     alert('Configurações atualizadas!');
     setActiveView('dashboard');
   };
@@ -276,18 +304,18 @@ export default function App() {
   const canPerformAudit = currentUser.permissions.includes('PERFORM_AUDIT');
 
   return (
-    <div id="app-view" className="flex h-screen bg-slate-100">
+    <div id="app-view" className="flex h-screen bg-slate-100 overflow-hidden">
       <SideNav 
         standards={accessibleStandards} activeView={activeView} setActiveView={setActiveView} 
-        currentUser={currentUser}
+        currentUser={currentUser} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
             title={activeStandard?.name || (completedAuditToView ? "Detalhes da Auditoria" : activeView === 'change-password' ? 'Configurações' : activeView.charAt(0).toUpperCase() + activeView.slice(1))}
-            currentUser={currentUser} setActiveView={setActiveView}
+            currentUser={currentUser} setActiveView={setActiveView} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-8 pb-20 md:pb-8">
-            {activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'change-password' && !activeView.startsWith('history') && (
+            {activeView !== 'dashboard' && activeView !== 'report' && activeView !== 'users' && activeView !== 'change-password' && !activeView.startsWith('history') && (
                 <AuditInfoForm auditInfo={auditInfo} setAuditInfo={setAuditInfo} />
             )}
             
@@ -312,6 +340,15 @@ export default function App() {
                 <ReportGenerator auditInfo={auditInfo} standards={accessibleStandards} />
             )}
 
+            {activeView === 'users' && currentUser.permissions.includes('MANAGE_USERS') && (
+                <UserManagement
+                    users={users} roles={roles} onAddUser={handleAddUser}
+                    onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser}
+                    onResetPassword={handleResetUserPassword}
+                    currentUser={currentUser} allEnvironments={ALL_ENVIRONMENTS}
+                />
+            )}
+
             {activeView === 'history' && (
                 <AuditHistory 
                     audits={filteredCompletedAudits} onViewAudit={(id) => setActiveView(`history-${id}`)}
@@ -325,7 +362,7 @@ export default function App() {
                 <ChangePassword currentUser={currentUser} onSave={handleChangeOwnSecurity} onCancel={() => setActiveView('dashboard')} />
             )}
 
-            {!activeStandard && !['dashboard', 'report', 'history', 'change-password'].includes(activeView) && !completedAuditToView && (
+            {!activeStandard && !['dashboard', 'report', 'users', 'history', 'change-password'].includes(activeView) && !completedAuditToView && (
                  <div className="flex flex-col items-center justify-center h-full text-center text-slate-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mb-4 text-slate-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-4.5 0V6.375c0-.621.504-1.125 1.125-1.125h2.25M13.5 10.5H21M13.5 6H21" />

@@ -7,6 +7,8 @@ interface SideNavProps {
     activeView: string;
     setActiveView: (id: string) => void;
     currentUser: AuthenticatedUser | null;
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
 }
 
 const HomeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -19,6 +21,12 @@ const DocumentTextIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
   </svg>
+);
+
+const UsersIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-2.253 9.5 9.5 0 0 0-1.255-7.138 9.337 9.337 0 0 0-3.3-2.625 9.337 9.337 0 0 0-2.625-.372 9.337 9.337 0 0 0-4.121 2.253 9.5 9.5 0 0 0 1.255 7.138 9.337 9.337 0 0 0 3.3 2.625Zm-6.25 1.625a9.337 9.337 0 0 1-4.121-2.253 9.5 9.5 0 0 1 1.255-7.138 9.337 9.337 0 0 1 3.3-2.625 9.337 9.337 0 0 1 2.625-.372 9.337 9.337 0 0 1 4.121 2.253 9.5 9.5 0 0 1-1.255 7.138 9.337 9.337 0 0 1-3.3 2.625 9.337 9.337 0 0 1-2.625.372Zm-6.25-1.625a9.337 9.337 0 0 1-4.121-2.253 9.5 9.5 0 0 1 1.255-7.138 9.337 9.337 0 0 1 3.3-2.625 9.337 9.337 0 0 1 2.625-.372 9.337 9.337 0 0 1 4.121 2.253 9.5 9.5 0 0 1-1.255 7.138 9.337 9.337 0 0 1-3.3 2.625 9.337 9.337 0 0 1-2.625.372Z" />
+    </svg>
 );
 
 const ArchiveBoxIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -39,7 +47,7 @@ const ListBulletIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActiveView, currentUser }) => {
+export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActiveView, currentUser, isOpen, setIsOpen }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const isNormasActive = standards.some(s => s.id === activeView);
@@ -57,28 +65,45 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
 
     return (
         <>
-            <nav className="hidden md:flex flex-col w-64 bg-slate-900 text-white flex-shrink-0">
-                <div className="p-6 border-b border-slate-700">
-                    <h1 className="text-2xl font-bold">Auditoria ISO</h1>
-                    <p className="text-sm text-slate-400">Assistente Interno</p>
+            {/* Overlay for mobile */}
+            {isOpen && (
+                <div className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity" onClick={() => setIsOpen(false)} />
+            )}
+
+            {/* Sidebar */}
+            <nav className={`fixed md:static inset-y-0 left-0 z-50 w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col transform transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0 md:ml-0' : '-translate-x-full md:translate-x-0 md:-ml-64'}`}>
+                <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold">Auditoria ISO</h1>
+                        <p className="text-sm text-slate-400">Assistente Interno</p>
+                    </div>
+                    <button onClick={() => setIsOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                 </div>
                 <div className="flex-1 p-4 space-y-2 overflow-y-auto">
                     {currentUser?.allowedDepartments.includes('Dashboard') && (
-                        <button onClick={() => setActiveView('dashboard')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'dashboard' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                        <button onClick={() => { setActiveView('dashboard'); setIsOpen(false); }} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'dashboard' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
                             <HomeIcon className="w-6 h-6" />
                             <span className="font-medium">Dashboard</span>
                         </button>
                     )}
                     {currentUser?.allowedDepartments.includes('Relatório') && (
-                        <button onClick={() => setActiveView('report')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'report' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                        <button onClick={() => { setActiveView('report'); setIsOpen(false); }} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'report' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
                             <DocumentTextIcon className="w-6 h-6" />
                             <span className="font-medium">Relatório</span>
                         </button>
                     )}
                     {currentUser?.allowedDepartments.includes('Histórico') && (
-                        <button onClick={() => setActiveView('history')} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView.startsWith('history') ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                        <button onClick={() => { setActiveView('history'); setIsOpen(false); }} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView.startsWith('history') ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
                             <ArchiveBoxIcon className="w-6 h-6" />
                             <span className="font-medium">Histórico</span>
+                        </button>
+                    )}
+                    {currentUser?.allowedDepartments.includes('Usuários') && (
+                        <button onClick={() => { setActiveView('users'); setIsOpen(false); }} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === 'users' ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                            <UsersIcon className="w-6 h-6" />
+                            <span className="font-medium">Usuários</span>
                         </button>
                     )}
                     <div className="pt-2">
@@ -87,7 +112,7 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                             {standards.map((standard) => {
                                 const Icon = standard.icon;
                                 return (
-                                    <button key={standard.id} onClick={() => setActiveView(standard.id)} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === standard.id ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
+                                    <button key={standard.id} onClick={() => { setActiveView(standard.id); setIsOpen(false); }} className={`w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors ${activeView === standard.id ? 'bg-blue-600' : 'text-slate-300 hover:bg-slate-800'}`}>
                                         {Icon && <Icon className="w-5 h-5" />}
                                         <span className="text-sm font-medium">{standard.name}</span>
                                     </button>
@@ -108,7 +133,7 @@ export const SideNav: React.FC<SideNavProps> = ({ standards, activeView, setActi
                     </button>
                     {isProfileOpen && (
                         <div className="absolute bottom-20 left-4 right-4 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2">
-                             <button onClick={() => { setIsProfileOpen(false); setActiveView('change-password'); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition">
+                             <button onClick={() => { setIsProfileOpen(false); setActiveView('change-password'); setIsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition">
                                 <KeyIcon className="w-5 h-5 text-slate-400" />
                                 <span>Configurações</span>
                             </button>
